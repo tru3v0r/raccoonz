@@ -1,2 +1,2 @@
 # raccoonz
-A sneaky open-source software that aims to turn data chaos into order.
+A sneaky script that aims to turn data chaos into order.
