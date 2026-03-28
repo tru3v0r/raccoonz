@@ -14,6 +14,7 @@ class RaccoonError(Exception):
 
 
 
+
 #registry
 
 class BinNotFoundError(RaccoonError):
@@ -24,6 +25,11 @@ class BinNotFoundError(RaccoonError):
 class FetcherNotFoundError(RaccoonError):
     default = "Fetcher '{fetcher}' not found."
     fields = ("fetcher",)
+
+
+class ParserNotFoundError(RaccoonError):
+    default = "Parser '{parser}' not found."
+    fields = ("parser",)
 
 
 class EndpointNotFoundError(RaccoonError):
