@@ -1,8 +1,9 @@
+from ..constants.config import DEFAULT_FETCHER
 from ..errors import FetcherNotFoundError
 
 
 
-def build_fetcher(name="bs4", **kwargs):
+def build_fetcher(name=DEFAULT_FETCHER, **kwargs):
 
     match name:
 
