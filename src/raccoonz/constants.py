@@ -1,0 +1,12 @@
+# bin keys
+BIN_KEY_NAME = "name"
+BIN_KEY_URL = "url"
+BIN_KEY_AUTHOR = "author"
+BIN_KEY_VERSION = "version"
+BIN_KEY_COMMENT = "comment"
+BIN_KEY_FETCHER = "fetcher"
+BIN_KEY_PARSER = "parser"
+BIN_KEY_ENDPOINTS = "endpoints"
+BIN_KEY_URL = "url"
+BIN_KEY_ENDPOINT_PATH = "path"
+BIN_KEY_FIELD_SELECTOR = "select"
