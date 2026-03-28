@@ -1,0 +1,51 @@
+from .base import BaseParser
+from bs4 import BeautifulSoup
+import raccoonz.constants.bin_keys as bin_keys
+from raccoonz.errors import SelectorSyntaxError
+
+
+
+class BS4Parser(BaseParser):
+
+    def parse(self, html, fields, careless=False):
+        soup = BeautifulSoup(html, "html.parser")
+        result = {}
+        errors = []
+
+        for key, value in fields.items():
+            answer = None
+            selectors = value.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIED_SELECT_CSS, [])
+
+            for selector in selectors:
+                if not selector:
+                    errors.append(f"Empty selector for field: {key}")
+                    continue
+
+                try:
+                    elements = soup.select(selector)
+                    
+                except SelectorSyntaxError:
+                    errors.append(f"Empty selector for field {key}': {selector}")
+                    continue
+
+                if elements:
+
+                    match bin_keys.FIELD_TYPE:
+
+                        case bin_keys.FIELD_TYPE_TEXT:
+                            answer = elements[0].get_text(strip=True)
+                        
+                        case bin_keys.FIELD_TYPE_LIST_TEXT:
+                            answer = [e.get_text(strip=True) for e in elements]
+
+                        case bin_keys.FIELD_TYPE_ATTRIBUTE:
+                            answer = elements[0].get(spec[bin_keys.FIELD_TYPE_ATTRIBUTE])
+                        
+            if answer is None:
+                errors.append(f"Missing field: {key}")
+
+            result[key] = answer
+        
+        result["_errors"] = errors
+
+        return result

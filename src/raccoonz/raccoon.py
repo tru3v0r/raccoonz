@@ -1,8 +1,9 @@
-import raccoonz.constants.config as config
-import raccoonz.constants.bin_keys as bin_keys
-from bin import load as load_bin
+from .constants import config
+from .constants import bin_keys
+from .bin import load as load_bin
 from .errors import EndpointNotFoundError, BinKeyError
 from .fetcher.factory import build_fetcher
+from .parser.factory import build_parser
 
 
 class Raccoon:
@@ -19,7 +20,7 @@ class Raccoon:
         bin_parser = self.config.get(bin_keys.PARSER, default_parser)
 
         self.fetcher = build_fetcher(bin_fetcher, **kwargs)
-
+        self.parser = build_parser(bin_parser, **kwargs)
 
     def dig(self, endpoint, params, refresh=False):
 
@@ -43,4 +44,8 @@ class Raccoon:
 
         data = self.fetcher.fetch(url)
 
-        print(data)
+        result = self.parser.parse(
+            data,
+            ep.get(bin_keys.FIELDS))
+        
+        return result
