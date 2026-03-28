@@ -1,4 +1,6 @@
-from .config import load_config
+import config
+import constants
+from bin import load as load_bin
 from .errors import EndpointNotFoundError, BinKeyError
 from .fetcher.factory import build_fetcher
 
@@ -7,21 +9,19 @@ class Raccoon:
 
     def __init__(self, bin: str, debug: bool=False, **kwargs):
         self.bin = bin
-        self.config = load_config(bin)
+        self.config = load_bin(bin)
         self.debug = debug
 
-        default_fetcher = "requests"
-        default_parser = "bs4"
+        default_fetcher = config.DEFAULT_FETCHER
+        default_parser = config.DEFAULT_PARSER
 
-        bin_fetcher = self.config.get("fetcher", default_fetcher)
-        bin_parser = self.config.get("parser", default_parser)
+        bin_fetcher = self.config.get(constants.BIN_KEY_FETCHER, default_fetcher)
+        bin_parser = self.config.get(constants.BIN_KEY_PARSER, default_parser)
 
         self.fetcher = build_fetcher(bin_fetcher, **kwargs)
 
-    def dig(self, endpoint, params, refresh=False):
 
-        BASE_URL_KEY = "url"
-        PATH_KEY = "path"
+    def dig(self, endpoint, params, refresh=False):
 
         endpoints = self.config.get("endpoints", {})
 
@@ -30,14 +30,14 @@ class Raccoon:
         
         ep = endpoints[endpoint]
 
-        base_url = self.config.get(BASE_URL_KEY)
-        path = ep.get(PATH_KEY)
+        base_url = self.config.get(constants.BIN_KEY_URL)
+        path = ep.get(constants.BIN_KEY_ENDPOINT_PATH)
 
         if not base_url:
-            raise BinKeyError(bin, BASE_URL_KEY)
+            raise BinKeyError(bin, constants.BIN_KEY_URL)
         
         if not path:
-            raise BinKeyError(bin, PATH_KEY)
+            raise BinKeyError(bin, constants.BIN_KEY_ENDPOINT_PATH)
         
         url = f"{base_url.rstrip('/')}/{path.lstrip('/')}".format(**params)
 
