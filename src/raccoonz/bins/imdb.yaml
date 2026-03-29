@@ -136,5 +136,8 @@ endpoints:
         
 filters:
 
+  imdb_id:
+    regex: "^(https://www\\.imdb\\.com)?/(title|name)/(tt\\d+|nm\\d+)/"
+    
   vote_by_star:
     regex: "^(\\d+)"
