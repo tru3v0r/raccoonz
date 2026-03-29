@@ -26,7 +26,7 @@ endpoints:
           css:
             - "h1 + ul[role='presentation'] li:first-child"
             - "ul[role='presentation']:nth-child(2) li:first-child"
-        as: int
+        type: int
 
       content-rating:
         select:
@@ -39,3 +39,29 @@ endpoints:
           css:
             - "h1 + ul[role='presentation'] li:nth-child(3)"
             - "ul[role='presentation']:nth-child(2) li:nth-child(3)"
+
+      rating:
+        note:
+          select:
+            css:
+              - "[data-testid='hero-rating-bar__aggregate-rating__score'] span"
+              - "[data-testid='rating-histogram'] div span svg+span"
+          type: int
+        votes:
+          count:
+            select:
+              css:
+              - "[data-testid='rating-histogram-vote-count']"
+            type: string
+          chart:
+            select:
+              css:
+                - "[data-testid^='rating-histogram-bar-']"
+            extract:
+              attr: aria-label
+            filter: vote_by_star
+        reviews:
+          select:
+            css:
+              - "[data-testid='reviews-header'] h3 span:nth-child(2)"
+            type: string
