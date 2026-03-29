@@ -75,7 +75,8 @@ endpoints:
       
       synopsis:
         select:
-          - "[data-testid='plot-l']"
+          css:
+            - "[data-testid='plot-l']"
       
       director:
         select:
