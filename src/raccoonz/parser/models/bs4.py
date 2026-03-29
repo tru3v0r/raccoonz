@@ -32,7 +32,9 @@ class BS4Parser(BaseParser):
 
                 if elements:
 
-                    match bin_keys.FIELD_TYPE:
+                    field_type = value.get(bin_keys.FIELD_TYPE, bin_keys.FIELD_TYPE_TEXT)
+
+                    match field_type:
 
                         case bin_keys.FIELD_TYPE_TEXT:
                             answer = elements[0].get_text(strip=True)
@@ -41,7 +43,7 @@ class BS4Parser(BaseParser):
                             answer = [e.get_text(strip=True) for e in elements]
 
                         case bin_keys.FIELD_TYPE_ATTRIBUTE:
-                            answer = elements[0].get(spec[bin_keys.FIELD_TYPE_ATTRIBUTE])
+                            answer = elements[0].get(value[bin_keys.FIELD_TYPE_ATTRIBUTE])
                         
             if answer is None:
                 errors.append(f"Missing field: {key}")
