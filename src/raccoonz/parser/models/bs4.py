@@ -13,6 +13,7 @@ class BS4Parser(BaseParser):
         errors = []
 
         for key, value in fields.items():
+            print(key, type(value), value)
             answer = None
             selectors = value.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS, [])
 
