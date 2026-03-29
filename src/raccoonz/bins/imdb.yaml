@@ -7,7 +7,9 @@ comment: "The first raccoonz bin ever."
 fetcher: playwright
 parser: bs4
 
+
 endpoints:
+
 
   movie:
 
@@ -133,11 +135,56 @@ endpoints:
           css:
             - "[data-testid='storyline-plot-summary']"
         type: text
-        
+
+
+  full_credits:
+    path: "/title/{id}/fullcredits/"
+    mode: sections_map
+
+    sections:
+      container:
+        select:
+          - "section"
+
+      name:
+        select:
+          - "h4"
+          - "h3"
+        type: text
+        transform: slug
+
+      entries:
+        container:
+          select:
+            - "table tr"
+            - "ul li"
+
+        fields:
+          person_name:
+            select:
+              - "a[href*='/name/nm']"
+            type: text
+
+          person_id:
+            select:
+              - "a[href*='/name/nm']"
+            type: attr
+            attr: "href"
+            transform: imdb_name_id
+
+          detail:
+            select:
+              - ".credit"
+              - ".role"
+              - "td:nth-child(2)"
+            type: text
+            optional: true
+
+
 filters:
 
   imdb_id:
     regex: "^(https://www\\.imdb\\.com)?/(title|name)/(tt\\d+|nm\\d+)/"
-    
+
   vote_by_star:
     regex: "^(\\d+)"
