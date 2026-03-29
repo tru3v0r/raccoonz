@@ -5,7 +5,7 @@ version: 0.0.1
 comment: "The first raccoonz bin ever."
 
 fetcher: playwright
-
+parser: bs4
 
 endpoints:
 
@@ -20,11 +20,22 @@ endpoints:
             - "[data-testid='hero__primary-text']"
             - "h1 span"
             - "h1"
-        type: text
 
       year:
         select:
           css:
             - "h1 + ul[role='presentation'] li:first-child"
             - "ul[role='presentation']:nth-child(2) li:first-child"
-        type: text
+        as: int
+
+      content-rating:
+        select:
+          css:
+            - "h1 + ul[role='presentation'] li:nth-child(2)"
+            - "ul[role='presentation']:nth-child(2) li:nth-child(2)"
+
+      length:
+        select:
+          css:
+            - "h1 + ul[role='presentation'] li:nth-child(3)"
+            - "ul[role='presentation']:nth-child(2) li:nth-child(3)"
