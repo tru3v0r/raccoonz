@@ -37,6 +37,7 @@ endpoints:
       length:
         select:
           css:
+            - "[data-testid='title-techspec_runtime'] div span"
             - "h1 + ul[role='presentation'] li:nth-child(3)"
             - "ul[role='presentation']:nth-child(2) li:nth-child(3)"
 
@@ -52,7 +53,6 @@ endpoints:
             select:
               css:
               - "[data-testid='rating-histogram-vote-count']"
-            type: string
           chart:
             select:
               css:
@@ -64,4 +64,77 @@ endpoints:
           select:
             css:
               - "[data-testid='reviews-header'] h3 span:nth-child(2)"
-            type: string
+
+      interests:
+        select:
+          css:
+            - "[data-testid='genres'] a"
+        type: list_text
+      
+      synopsis:
+        select:
+          - "[data-testid='plot-l']"
+      
+      director:
+        select:
+          css:
+            - "[data-testid='title-pc-list']>li:nth-child(1)>div>ul[role='presentation']"
+            - "[data-testid='title-pc-list']>li>span+div>ul[role='presentation']"
+        type: list_text
+      
+      writers:
+        select:
+          css:
+            - "[data-testid='title-pc-list']>li:nth-child(2)>div>ul[role='presentation']"
+        type: list_text
+      
+      stars:
+        select:
+          css:
+            - "[data-testid='title-pc-list']>li:nth-child(2)>div>ul[role='presentation']"
+        type: list_text
+
+      top_cast:
+        count:
+          select:
+            css:
+              - "[data-testid='title-cast'] [data-testid='title-cast-header'] h3 span:nth-child(2)"
+              - "[data-testid='title-cast'] [data-testid='title-cast-header'] h3 span.ipc-title__subtext"
+          type: text
+
+        fields:
+          actor:
+            name:
+              select:
+                css:
+                  - "a[data-testid='title-cast-item__actor']"
+              type: text
+            link:
+              select:
+                css:
+                  - "a[data-testid='title-cast-item__actor']"
+              extract:
+                attr: href
+              type: text
+            id:
+              select:
+                css:
+                  - "a[data-testid='title-cast-item__actor']"
+              extract:
+                attr: href
+              filter: imdb_id
+            role:
+              select:
+              - "ul[data-testid='cast-item-characters-list'] li"
+            type: list_text
+
+      storyline:
+        select:
+          css:
+            - "[data-testid='storyline-plot-summary']"
+        type: text
+        
+filters:
+
+  vote_by_star:
+    regex: "^(\\d+)"
