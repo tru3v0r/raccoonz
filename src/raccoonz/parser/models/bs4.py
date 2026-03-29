@@ -14,9 +14,10 @@ class BS4Parser(BaseParser):
 
         for key, value in fields.items():
             answer = None
-            selectors = value.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIED_SELECT_CSS, [])
+            selectors = value.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS, [])
 
             for selector in selectors:
+                print(f"selector: {selector}")
                 if not selector:
                     errors.append(f"Empty selector for field: {key}")
                     continue
