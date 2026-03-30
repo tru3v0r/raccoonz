@@ -32,7 +32,26 @@ class BS4Parser(BaseParser):
     
 
     def _select(self, soup, key, value, errors):
-        pass
+        selectors = value.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS, [])
+
+        for selector in selectors:
+            print(f"selector: {selector}")
+
+            if not selector:
+                errors.append(f"Empty selector for field: {key}")
+                continue
+
+            try:
+                elements = soup.select(selector)
+            except Exception:
+                errors.append(f"Invalid selector for field '{key}': {selector}")
+                continue
+
+            if elements:
+                return elements
+
+        return None
+
 
     def _extract(self, elements, value):
         pass
