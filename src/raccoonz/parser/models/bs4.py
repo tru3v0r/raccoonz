@@ -13,43 +13,32 @@ class BS4Parser(BaseParser):
         errors = []
 
         for key, value in fields.items():
-            print(key, type(value), value)
             answer = None
-            selectors = value.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS, [])
 
-            for selector in selectors:
-                print(f"selector: {selector}")
-                if not selector:
-                    errors.append(f"Empty selector for field: {key}")
-                    continue
+            elements = self._select(soup, key, value, errors)
 
-                try:
-                    elements = soup.select(selector)
-                    
-                except SelectorSyntaxError:
-                    errors.append(f"Empty selector for field {key}': {selector}")
-                    continue
+            if elements:
+                extracted = self._extract(elements, value)
+                filtered = self._filter(extracted, value)
+                answer = self._type(filtered, value)
 
-                if elements:
-
-                    field_type = value.get(bin_keys.FIELD_TYPE, bin_keys.FIELD_TYPE_TEXT)
-
-                    match field_type:
-
-                        case bin_keys.FIELD_TYPE_TEXT:
-                            answer = elements[0].get_text(strip=True)
-                        
-                        case bin_keys.FIELD_TYPE_LIST_TEXT:
-                            answer = [e.get_text(strip=True) for e in elements]
-
-                        case bin_keys.FIELD_TYPE_ATTRIBUTE:
-                            answer = elements[0].get(value[bin_keys.FIELD_TYPE_ATTRIBUTE])
-                        
             if answer is None:
                 errors.append(f"Missing field: {key}")
 
             result[key] = answer
-        
-        result["_errors"] = errors
 
+        result["_errors"] = errors
         return result
+    
+
+    def _select(self, soup, key, value, errors):
+        pass
+
+    def _extract(self, elements, value):
+        pass
+
+    def _filter(self, values, value):
+        pass
+
+    def _type(self, values, value):
+        pass
