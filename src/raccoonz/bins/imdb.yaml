@@ -81,20 +81,20 @@ endpoints:
       director:
         select:
           css:
-            - "[data-testid='title-pc-list']>li:nth-child(1)>div>ul[role='presentation']"
-            - "[data-testid='title-pc-list']>li>span+div>ul[role='presentation']"
+            - "[data-testid='title-pc-list']>li:nth-child(1)>div>ul[role='presentation']:nth-child(1)"
+            - "[data-testid='title-pc-list']>li>span+div>ul[role='presentation']:nth-child(1)"
         type: list_text
       
       writers:
         select:
           css:
-            - "[data-testid='title-pc-list']>li:nth-child(2)>div>ul[role='presentation']"
+            - "[data-testid='title-pc-list']>li:nth-child(2)>div>ul[role='presentation'] a"
         type: list_text
       
       stars:
         select:
           css:
-            - "[data-testid='title-pc-list']>li:nth-child(2)>div>ul[role='presentation']"
+            - "[data-testid='title-pc-list']>li:nth-child(3)>div>ul[role='presentation']"
         type: list_text
 
       top_cast:
