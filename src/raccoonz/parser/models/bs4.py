@@ -78,7 +78,20 @@ class BS4Parser(BaseParser):
 
 
     def _extract(self, elements, value):
-        return None
+        extract = value.get(bin_keys.FIELD_EXTRACT, bin_keys.FIELD_EXTRACT_INNER_TEXT)
+
+        if extract == bin_keys.FIELD_EXTRACT_INNER_TEXT:
+            values = [e.get_text(strip=True) for e in elements]
+
+        elif isinstance(extract, dict) and "attr" in extract:
+            attr = extract["attr"]
+            values = [e.get(attr) for e in elements]
+
+        else:
+            values = []
+
+        values = [v for v in values if v is not None]
+        return values
 
 
     def _filter(self, values, value):
