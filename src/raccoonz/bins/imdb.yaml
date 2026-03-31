@@ -94,7 +94,7 @@ endpoints:
       stars:
         select:
           css:
-            - "[data-testid='title-pc-list']>li:nth-child(3)>div>ul[role='presentation']"
+            - "[data-testid='title-pc-list']>li:nth-child(3)>div>ul[role='presentation'] a"
         type: list_text
 
       top_cast:
