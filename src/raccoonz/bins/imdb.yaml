@@ -49,12 +49,12 @@ endpoints:
             css:
               - "[data-testid='hero-rating-bar__aggregate-rating__score'] span"
               - "[data-testid='rating-histogram'] div span svg+span"
-          type: int
+          type: float
         votes:
           count:
             select:
               css:
-              - "[data-testid='rating-histogram-vote-count']"
+                - "[data-testid='rating-histogram-vote-count']"
           chart:
             select:
               css:
