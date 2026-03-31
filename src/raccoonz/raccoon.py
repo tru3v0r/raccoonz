@@ -20,7 +20,8 @@ class Raccoon:
         bin_parser = self.config.get(bin_keys.PARSER, default_parser)
 
         self.fetcher = build_fetcher(bin_fetcher, **kwargs)
-        self.parser = build_parser(bin_parser, **kwargs)
+        self.parser = build_parser(bin_parser, config=self.config, **kwargs)
+
 
     def dig(self, endpoint, params, refresh=False):
 

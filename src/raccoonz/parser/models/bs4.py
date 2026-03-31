@@ -2,10 +2,16 @@ from .base import BaseParser
 from bs4 import BeautifulSoup
 import raccoonz.constants.bin_keys as bin_keys
 from raccoonz.errors import SelectorSyntaxError
+import re
 
 
 
 class BS4Parser(BaseParser):
+
+
+    def __init__(self, config=None, **kwargs):
+        super().__init__()
+        self.filters = (config or {}).get("filters", {})
 
 
     def parse(self, html, fields, careless=False):
@@ -95,7 +101,31 @@ class BS4Parser(BaseParser):
 
 
     def _filter(self, values, value):
-        return None
+        filter_name = value.get(bin_keys.FIELD_FILTERS)
+
+        if not filter_name:
+            return values
+
+        filter_conf = self.filters.get(filter_name)
+        if not filter_conf:
+            return values
+
+        pattern = filter_conf.get(bin_keys.FIELD_FILTER_REGEX)
+        if not pattern:
+            return values
+
+        regex = re.compile(pattern)
+
+        result = []
+        for v in values:
+            if not v:
+                continue
+
+            match = regex.search(v)
+            if match:
+                result.append(match.group(1))
+
+        return result
 
 
     def _type(self, values, value):
