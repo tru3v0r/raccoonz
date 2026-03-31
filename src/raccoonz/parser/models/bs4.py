@@ -36,7 +36,21 @@ class BS4Parser(BaseParser):
     # recursive reading
 
     def _walk(self, node, callback, path=""):
-        return None
+        result = {}
+
+        for key, value in node.items():
+            full_key = f"{path}.{key}" if path else key
+
+            if self._is_leaf(value):
+                result[key] = callback(full_key, value)
+
+            elif self._is_branch(value):
+                result[key] = self._walk(value, callback, full_key)
+
+            else:
+                result[key] = None
+
+        return result
 
 
     #pipeline
