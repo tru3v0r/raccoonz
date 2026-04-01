@@ -1,0 +1,36 @@
+title: null
+year: null
+content-rating: null
+length: null
+rating:
+  note: null
+  votes:
+    count: null
+    chart: null
+  reviews: null
+interests: null
+synopsis: null
+director: null
+writers: null
+stars: null
+top_cast:
+  count: null
+  fields:
+    actor: null
+storyline: null
+_errors:
+- 'Missing field: title'
+- 'Missing field: year'
+- 'Missing field: content-rating'
+- 'Missing field: length'
+- 'Missing field: rating.note'
+- 'Missing field: rating.votes.count'
+- 'Missing field: rating.votes.chart'
+- 'Missing field: rating.reviews'
+- 'Missing field: interests'
+- 'Missing field: synopsis'
+- 'Missing field: director'
+- 'Missing field: writers'
+- 'Missing field: stars'
+- 'Missing field: top_cast.count'
+- 'Missing field: storyline'
