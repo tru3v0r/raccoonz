@@ -1,8 +1,15 @@
-# config
 DEFAULT_FETCHER = "bs4"
 DEFAULT_PARSER = "playwright"
 
+BAG_FIELD_PARAMS = "params"
+BAG_FIELD_URL = "url"
+BAG_FIELD_HTML = "html"
+BAG_FIELD_DATA = "data"
+BAG_FIELD_TIMESTAMP ="timestamp"
+
 NEST_PATH = "nest"
+NEST_PATH_RAW = "raw"
+NEST_PATH_DATA = "data"
 
 PLAYWRIGHT_TIMEOUT = 10000
 PLAYWRIGHT_HEADLESS = True
