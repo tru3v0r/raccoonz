@@ -13,7 +13,7 @@ NEST_PATH_DATA = "data"
 
 PLAYWRIGHT_TIMEOUT = 10000
 PLAYWRIGHT_HEADLESS = True
-PLAYWRIGHT_CONTEXT_USER_AGENT = "Mozilla/5.0 (Windows NT 10/0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+PLAYWRIGHT_CONTEXT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 PLAYWRIGHT_CONTEXT_LOCALE = "en-US"
 PLAYWRIGHT_EXTRA_HTTP_HEADERS = {"Accept-Language": "en-US,en;q=0.9"}
 PLAYWRIGHT_PAGE_WAIT_UNTIL = "domcontentloaded"
