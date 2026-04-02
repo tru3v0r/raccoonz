@@ -1,0 +1,118 @@
+name: workbc
+url: "https://www.workbc.ca"
+author: "Valentin Venom"
+version: 0.0.1
+comment: "The Canadian BC Job Board."
+
+fetcher: requests
+parser: bs4
+
+
+endpoints:
+
+  offer:
+
+    path: "/search-and-prepare-job/find-jobs#/job-details/{id}"
+    
+    fields:
+      position:
+        select:
+          css:
+            - "h2.job-title"
+
+      company:
+        select:
+          css:
+            - ".company"
+
+      location:
+        select:
+          css:
+            - ".job-location td + td"
+
+      salary:
+        select:
+          css:
+            - ".job-salary td + td"
+
+      contract:
+        select:
+          css:
+            - ".job-type td + td"
+
+      schedule:
+        select:
+          css:
+            - ".work-schedule td + td"
+
+      workplace:
+        select:
+          css:
+            - ".workplace-type td + td"
+
+      date_start:
+        select:
+          css:
+            - ".start-date td + td"
+
+      language:
+        select:
+          css:
+            - ".language td + td"
+
+      positions:
+        select:
+          css:
+            - ".positions-available td + td"
+
+      noc_group:
+        select:
+          css:
+            - ".noc-group td + td"
+
+      date_expires:
+        select:
+          css:
+            - ".expiry-date td + td"
+
+      date_posted:
+        select:
+          css:
+            - ".post-date td + td"
+
+      date_last_updated:
+        select:
+          css:
+            - ".last-updated td + td"
+
+      view:
+        select:
+          css:
+            - ".views"
+
+      id:
+        select:
+          css:
+            - ".job-number td + td"
+
+      requirements:
+        key:
+          select:
+            css:
+              - ".job-description-details [class^='job-']:not(:last-child) h3"
+        value:
+          select:
+            css:
+              - ".job-description-details [class^='job-']:not(:last-child) ul li"
+        
+
+      apply_mode:
+        key:
+          select:
+            css:
+              - ".how-to-apply div"
+        value:
+          select:
+            css:
+              - ".how-to-apply div div"
+
