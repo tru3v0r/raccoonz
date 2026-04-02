@@ -57,7 +57,9 @@ class Raccoon:
         if not refresh and cached and cached.get(config.BAG_FIELD_DATA) is not None:
             return cached[config.BAG_FIELD_DATA]
         
-        html = self.fetcher.fetch(url)
+        wait_selector = self.config.get(bin_keys.ENDPOINT_WAIT_SELECTOR)
+        
+        html = self.fetcher.fetch(url, wait_selector=wait_selector)
 
         parsed = self.parser.parse(
             html,
