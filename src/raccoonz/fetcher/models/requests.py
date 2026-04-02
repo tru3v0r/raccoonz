@@ -11,8 +11,14 @@ class RequestsFetcher(BaseFetcher):
     def __init__(self, timeout=config.REQUESTS_TIMEOUT, headers=None):
         self.timeout = timeout
         self.headers = headers or {
-            "User-Agent": config.REQUESTS_USER_AGENT,
-            "Accept-Language": config.REQUESTS_ACCEPT_LANGUAGE,
+            "User-Agent": config.REQUESTS_HEADERS_USER_AGENT,
+            "Accept": config.REQUESTS_HEADERS_ACCEPT,
+            "Accept-Language": config.REQUESTS_HEADERS_ACCEPT_LANGUAGE,
+            "Accept-Encoding": config.REQUESTS_HEADERS_ACCEPT_ENCODING,
+            "Connection": config.REQUESTS_HEADERS_CONNECTION,
+            "Upgrade-Insecure-Requests": config.REQUESTS_HEADERS_UPGRADE_INSECURE_REQUESTS,
+            "Referer": config.REQUESTS_HEADERS_REFERER,
+            "DNT": config.REQUESTS_HEADERS_DNT
         }
 
 
