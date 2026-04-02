@@ -9,7 +9,7 @@ class PlaywrightFetcher(BaseFetcher):
         self.headless = headless
         self.timeout = timeout
     
-    def fetch(self, url):
+    def fetch(self, url, wait_selector):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless)
             context = browser.new_context(
@@ -19,7 +19,13 @@ class PlaywrightFetcher(BaseFetcher):
             )
             page = context.new_page()
             page.goto(url, timeout=self.timeout, wait_until=config.PLAYWRIGHT_PAGE_WAIT_UNTIL)
-            page.wait_for_timeout(config.PLAYWRIGHT_PAGE_TIMEOUT)
+            
+            if wait_selector:
+                page.wait_for_selector(wait_selector, state="attached", timeout=self.timeout)
+
+            else:
+                page.wait_for_timeout(config.PLAYWRIGHT_PAGE_TIMEOUT)
+            
             html = page.content()
 
             browser.close()

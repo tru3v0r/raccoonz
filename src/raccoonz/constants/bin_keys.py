@@ -11,6 +11,7 @@ PARSER = "parser"
 
 ENDPOINTS = "endpoints"
 ENDPOINT_PATH = "path"
+ENDPOINT_WAIT_SELECTOR = "wait_selector"
 
 
 FIELDS = "fields"
