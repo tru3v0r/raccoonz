@@ -7,7 +7,7 @@ BAG_FIELD_HTML = "html"
 BAG_FIELD_DATA = "data"
 BAG_FIELD_TIMESTAMP ="timestamp"
 
-NEST_PATH = "nest"
+NEST_PATH = "src/raccoonz/nest"
 NEST_PATH_RAW = "raw"
 NEST_PATH_DATA = "data"
 
