@@ -16,6 +16,10 @@ ENDPOINT_WAIT_SELECTOR = "wait_selector"
 
 FIELDS = "fields"
 
+FIELD_DYNAMIC_PREFIX = "_"
+FIELD_DYNAMIC_KEY = "key"
+FIELD_DYNAMIC_VALUE = "value"
+
 FIELD_SELECT = "select"
 FIELD_SELECT_CSS = "css"
 
@@ -30,3 +34,4 @@ FIELD_TYPE = "type"
 FIELD_TYPE_STRING = "string"
 FIELD_TYPE_INT = "int"
 FIELD_TYPE_FLOAT = "float"
+

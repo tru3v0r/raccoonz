@@ -110,21 +110,21 @@ endpoints:
               select:
                 css:
                   - "a[data-testid='title-cast-item__actor']"
-            link:
-              select:
-                css:
-                  - "a[data-testid='title-cast-item__actor']"
-              extract:
-                attr: href
-              filter: clean_link
-            id:
+            _id:
               select:
                 css:
                   - "a[data-testid='title-cast-item__actor']"
               extract:
                 attr: href
               filter: extract_id_from_link
-            role:
+            _link:
+              select:
+                css:
+                  - "a[data-testid='title-cast-item__actor']"
+              extract:
+                attr: href
+              filter: clean_link
+            _role:
               select:
                 css:
                   - "ul[data-testid='cast-item-characters-list'] li"
