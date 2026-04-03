@@ -1,6 +1,7 @@
 from .base import BaseParser
 from bs4 import BeautifulSoup
 import raccoonz.constants.bin_keys as bin_keys
+import raccoonz.constants.config as config
 from raccoonz.errors import SelectorSyntaxError
 import re
 
@@ -11,7 +12,7 @@ class BS4Parser(BaseParser):
 
     def __init__(self, config=None, **kwargs):
         super().__init__()
-        self.filters = (config or {}).get("filters", {})
+        self.filters = (config or {}).get(bin_keys.FIELD_FILTERS, {})
 
 
     def parse(self, html, fields, careless=False):
@@ -25,7 +26,7 @@ class BS4Parser(BaseParser):
                 errors.append(f"Missing field: {key}")
                 return None
 
-            for step in (self._extract, self._filter, self._type):
+            for step in (self._extract, self._filter):
                 current = step(current, value)
 
                 if current is None:
@@ -35,7 +36,7 @@ class BS4Parser(BaseParser):
             return current
 
         result = self._walk(fields, parse_leaf)
-        result["_errors"] = errors
+        result[config.RESULT_ERRORS] = errors
         return result
 
 
