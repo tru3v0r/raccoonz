@@ -30,7 +30,7 @@ endpoints:
             - "ul[role='presentation']:nth-child(2) li:first-child"
         type: int
 
-      content-rating:
+      certificate:
         select:
           css:
             - "h1 + ul[role='presentation'] li:nth-child(2)"
@@ -47,7 +47,7 @@ endpoints:
         note:
           select:
             css:
-              - "[data-testid='hero-rating-bar__aggregate-rating__score'] span"
+              - "[data-testid='hero-rating-bar__aggregate-rating__score'] span:first-child"
               - "[data-testid='rating-histogram'] div span svg+span"
           type: float
         votes:
@@ -70,7 +70,7 @@ endpoints:
       interests:
         select:
           css:
-            - "[data-testid='genres'] a"
+            - "[data-testid='interests'] div a"
         type: list_text
       
       synopsis:
@@ -81,20 +81,19 @@ endpoints:
       director:
         select:
           css:
-            - "[data-testid='title-pc-list']>li:nth-child(1)>div>ul[role='presentation']:nth-child(1)"
-            - "[data-testid='title-pc-list']>li>span+div>ul[role='presentation']:nth-child(1)"
+            - "[data-testid='hero-parent'] section p[data-testid='plot']+div [data-testid='title-pc-list']:first-child [data-testid='title-pc-principal-credit']:first-child div li"
         type: list_text
       
       writers:
         select:
           css:
-            - "[data-testid='title-pc-list']>li:nth-child(2)>div>ul[role='presentation'] a"
+            - "[data-testid='hero-parent'] section p[data-testid='plot']+div [data-testid='title-pc-list']:first-child [data-testid='title-pc-principal-credit']:nth-child(2) div li"
         type: list_text
       
       stars:
         select:
           css:
-            - "[data-testid='title-pc-list']>li:nth-child(3)>div>ul[role='presentation'] a"
+            - "[data-testid='hero-parent'] section p[data-testid='plot']+div [data-testid='title-pc-list']:first-child [data-testid='title-pc-principal-credit']:nth-child(3) div li"
         type: list_text
 
       top_cast:
@@ -111,14 +110,12 @@ endpoints:
               select:
                 css:
                   - "a[data-testid='title-cast-item__actor']"
-              type: text
             link:
               select:
                 css:
                   - "a[data-testid='title-cast-item__actor']"
               extract:
                 attr: href
-              type: text
             id:
               select:
                 css:
@@ -128,14 +125,12 @@ endpoints:
               filter: imdb_id
             role:
               select:
-              - "ul[data-testid='cast-item-characters-list'] li"
-            type: list_text
-
+                css:
+                  - "ul[data-testid='cast-item-characters-list'] li"
       storyline:
         select:
           css:
-            - "[data-testid='storyline-plot-summary']"
-        type: text
+            - "[data-testid='storyline-plot-summary'] [role='presentation']"
 
 
   full_credits:
