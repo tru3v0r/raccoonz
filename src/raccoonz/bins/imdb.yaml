@@ -184,7 +184,7 @@ filters:
     regex: "^(https://www\\.imdb\\.com)?/(title|name)/(tt\\d+|nm\\d+)/"
 
   clean_link:
-    regex: "\?.*$"
+    regex: '\?.*$'
 
   vote_by_star:
     regex: "^(\\d+)"
