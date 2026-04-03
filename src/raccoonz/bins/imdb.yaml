@@ -106,7 +106,7 @@ endpoints:
 
         fields:
           actor:
-            name:
+            _name:
               select:
                 css:
                   - "a[data-testid='title-cast-item__actor']"
@@ -116,13 +116,14 @@ endpoints:
                   - "a[data-testid='title-cast-item__actor']"
               extract:
                 attr: href
+              filter: clean_link
             id:
               select:
                 css:
                   - "a[data-testid='title-cast-item__actor']"
               extract:
                 attr: href
-              filter: imdb_id
+              filter: extract_id_from_link
             role:
               select:
                 css:
@@ -166,7 +167,7 @@ endpoints:
               - "a[href*='/name/nm']"
             type: attr
             attr: "href"
-            transform: imdb_name_id
+            transform: extract_id_from_link
 
           detail:
             select:
@@ -179,8 +180,11 @@ endpoints:
 
 filters:
 
-  imdb_id:
+  extract_id_from_link:
     regex: "^(https://www\\.imdb\\.com)?/(title|name)/(tt\\d+|nm\\d+)/"
+
+  clean_link:
+    regex: "\?.*$"
 
   vote_by_star:
     regex: "^(\\d+)"
