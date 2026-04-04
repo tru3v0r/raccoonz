@@ -115,44 +115,9 @@ class Raccoon:
         return result
     
 
-    # write to bag
 
-    def _stash(self, endpoint, params, url, html, data, timestamp):
-        params_key = self._params_key(params)
-
-        if endpoint not in self.bag:
-            self.bag[endpoint] = {}
-
-        self.bag[endpoint][params_key] = {
-            config.BAG_FIELD_PARAMS: params,
-            config.BAG_FIELD_URL: url,
-            config.BAG_FIELD_HTML: html,
-            config.BAG_FIELD_DATA: data,
-            config.BAG_FIELD_TIMESTAMP: timestamp,
-        }
-
-    
-    # write to nest
-
-    def _hoard(self, endpoint, params, html, data, timestamp):
-        raw_dir = self._raw_dir_params(endpoint, params)
-        data_dir = self._data_dir_params(endpoint, params)
-
-        raw_dir.mkdir(parents=True, exist_ok=True)
-        data_dir.mkdir(parents=True, exist_ok=True)
-
-        raw_path = raw_dir / f"{timestamp}.html"
-        data_path = data_dir / f"{timestamp}.yaml"
-
-        raw_path.write_text(html, encoding="utf-8")
-
-        with data_path.open("w", encoding="utf-8") as f:
-            yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
-
-
-    # load from nest to bag
-
-    def _pack(self, ):
+    # load everything from nest to bag (eager)
+    def _pack(self):
         endpoints = self.config.get(bin_keys.ENDPOINTS, {})
 
         for endpoint in endpoints:
@@ -207,6 +172,7 @@ class Raccoon:
                 }
 
 
+    # load latest endpoint from nest to bag (lazy)
     def _pack_one(self, endpoint, params):
         params_key = self._params_key(params)
 
@@ -246,6 +212,40 @@ class Raccoon:
             config.BAG_FIELD_DATA: data,
             config.BAG_FIELD_TIMESTAMP: timestamp,
         }
+
+
+    # write to bag
+    def _stash(self, endpoint, params, url, html, data, timestamp):
+        params_key = self._params_key(params)
+
+        if endpoint not in self.bag:
+            self.bag[endpoint] = {}
+
+        self.bag[endpoint][params_key] = {
+            config.BAG_FIELD_PARAMS: params,
+            config.BAG_FIELD_URL: url,
+            config.BAG_FIELD_HTML: html,
+            config.BAG_FIELD_DATA: data,
+            config.BAG_FIELD_TIMESTAMP: timestamp,
+        }
+
+    
+    # write to nest
+    def _hoard(self, endpoint, params, html, data, timestamp):
+        raw_dir = self._raw_dir_params(endpoint, params)
+        data_dir = self._data_dir_params(endpoint, params)
+
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        data_dir.mkdir(parents=True, exist_ok=True)
+
+        raw_path = raw_dir / f"{timestamp}.html"
+        data_path = data_dir / f"{timestamp}.yaml"
+
+        raw_path.write_text(html, encoding="utf-8")
+
+        with data_path.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+
 
     # helpers
 
