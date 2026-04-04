@@ -23,6 +23,7 @@ class Raccoon:
     ):
         self.bin = bin
         self.config = load_bin(bin)
+        self.packing_mode = packing_mode
         self.debug = debug
 
         default_fetcher = config.DEFAULT_FETCHER
@@ -36,7 +37,7 @@ class Raccoon:
 
         self.bag = {}
         self.nest_root = Path(config.NEST_PATH) / self.bin
-        
+
         # eager packing mode
         if packing_mode == config.PACKING_MODE_EAGER:
             self._pack()
@@ -69,6 +70,10 @@ class Raccoon:
         url = f"{base_url.rstrip('/')}/{path.lstrip('/')}".format(**params)
         params_key = self._params_key(params)
 
+        # lazy packing mode
+        if self.packing_mode == config.PACKING_MODE_LAZY:
+            self._pack_one(endpoint, params)
+        
         cached = self.bag.get(endpoint, {}).get(params_key)
         if not refresh and cached and cached.get(config.BAG_FIELD_DATA) is not None:
             return cached[config.BAG_FIELD_DATA]
@@ -147,7 +152,7 @@ class Raccoon:
 
     # load from nest to bag
 
-    def _pack(self):
+    def _pack(self, ):
         endpoints = self.config.get(bin_keys.ENDPOINTS, {})
 
         for endpoint in endpoints:
@@ -201,6 +206,46 @@ class Raccoon:
                     config.BAG_FIELD_TIMESTAMP: timestamp,
                 }
 
+
+    def _pack_one(self, endpoint, params):
+        params_key = self._params_key(params)
+
+        # already loaded
+        if endpoint in self.bag and params_key in self.bag[endpoint]:
+            return
+
+        raw_dir = self._raw_dir_endpoint(endpoint) / params_key
+        data_dir = self._data_dir_endpoint(endpoint) / params_key
+
+        raw_file = self._latest_file(raw_dir, "*.html") if raw_dir.exists() else None
+        data_file = self._latest_file(data_dir, "*.yaml") if data_dir.exists() else None
+
+        if not raw_file and not data_file:
+            return
+
+        html = None
+        data = None
+        timestamp = None
+
+        if raw_file:
+            html = raw_file.read_text(encoding="utf-8")
+            timestamp = raw_file.stem
+
+        if data_file:
+            with data_file.open("r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            timestamp = timestamp or data_file.stem
+
+        if endpoint not in self.bag:
+            self.bag[endpoint] = {}
+
+        self.bag[endpoint][params_key] = {
+            config.BAG_FIELD_PARAMS: params,
+            config.BAG_FIELD_URL: None,
+            config.BAG_FIELD_HTML: html,
+            config.BAG_FIELD_DATA: data,
+            config.BAG_FIELD_TIMESTAMP: timestamp,
+        }
 
     # helpers
 
