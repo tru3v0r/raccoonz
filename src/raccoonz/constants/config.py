@@ -7,6 +7,9 @@ BAG_FIELD_HTML = "html"
 BAG_FIELD_DATA = "data"
 BAG_FIELD_TIMESTAMP ="timestamp"
 
+PACKING_MODE_LAZY = "lazy"
+PACKING_MODE_EAGER = "eager"
+
 NEST_PATH = "src/raccoonz/nest"
 NEST_PATH_RAW = "raw"
 NEST_PATH_DATA = "data"
@@ -29,4 +32,6 @@ REQUESTS_HEADERS_UPGRADE_INSECURE_REQUESTS = "1"
 REQUESTS_HEADERS_REFERER = "https://www.google.com/"
 REQUESTS_HEADERS_DNT = "1"
 
+RESULT_TYPE_DICT = "dict"
+RESULT_TYPE_OBJECT = "object"
 RESULT_ERRORS = "_errors"

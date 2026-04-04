@@ -32,7 +32,13 @@ class Raccoon:
         self.nest_root = Path(config.NEST_PATH) / self.bin
 
 
-    def dig(self, endpoint, params, refresh=False):
+    def dig(
+            self, 
+            endpoint, 
+            params, 
+            refresh=False,
+            result_type=config.RESULT_TYPE_DICT
+    ):
 
         endpoints = self.config.get("endpoints", {})
 
@@ -61,7 +67,7 @@ class Raccoon:
         
         html = self.fetcher.fetch(url, wait_selector=wait_selector)
 
-        parsed = self.parser.parse(
+        result = self.parser.parse(
             html,
             ep.get(bin_keys.FIELDS))
         
@@ -73,7 +79,7 @@ class Raccoon:
             params=params,
             url=url,
             html=html,
-            data=parsed,
+            data=result,
             timestamp=timestamp,
         )
 
@@ -82,11 +88,16 @@ class Raccoon:
             endpoint=endpoint,
             params=params,
             html=html,
-            data=parsed,
+            data=result,
             timestamp=timestamp,
         )
         
-        return parsed
+        # return object
+        if result_type == config.RESULT_TYPE_OBJECT:
+            from .object import Object
+            result = Object(result)
+
+        return result
     
 
     # write to bag
