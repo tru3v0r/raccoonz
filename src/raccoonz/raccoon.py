@@ -1,11 +1,12 @@
 from pathlib import Path
 from datetime import datetime
 import yaml
+import hashlib
 
 from .constants import config
 from .constants import bin_keys
 from .bin import load as load_bin
-from .errors import EndpointNotFoundError, BinKeyError
+from .errors import BinNotFoundError, EndpointNotFoundError, BinKeyError
 from .fetcher.factory import build_fetcher
 from .parser.factory import build_parser
 from .record import Record
@@ -22,7 +23,7 @@ class Raccoon:
             **kwargs
     ):
         self.bin = bin
-        self.config = load_bin(bin)
+        self.config = self._load_bin()
         self.packing_mode = packing_mode
         self.debug = debug
 
@@ -41,6 +42,22 @@ class Raccoon:
         # eager packing mode
         if packing_mode == config.PACKING_MODE_EAGER:
             self._pack()
+
+
+
+    def _load_bin(self) ->dict:
+        bin_path = Path(config.BINS_PATH) / f"{self.bin}.yaml"
+
+        if not bin_path.exists():
+            raise BinNotFoundError(bin=bin)
+        
+        content = bin_path.read_text(encoding=config.FILE_ENCODING_UTF8)
+        config_data = yaml.safe_load(content) or {}
+
+        self._bin_hash_value = hashlib.sha256(content.encode()).hexdigest()
+
+        return config_data
+        
 
 
     def dig(
@@ -167,6 +184,7 @@ class Raccoon:
                 self.bag[endpoint][params_key] = record
 
 
+
     # load latest endpoint from nest to bag (lazy)
     def _pack_one(self, endpoint, params):
         params_key = self._params_key(params)
@@ -196,11 +214,11 @@ class Raccoon:
             with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
                 payload = yaml.safe_load(f) or {}
 
-            meta = payload.get("meta", {})
-            data = payload.get("data")
-            params = meta.get("params", params)
-            url = meta.get("url")
-            timestamp = meta.get("timestamp") or timestamp or data_file.stem
+            meta = payload.get(config.NEST_FIELD_META, {})
+            data = payload.get(config.NEST_FIELD_DATA)
+            params = meta.get(config.NEST_FIELD_PARAMS, params)
+            url = meta.get(config.NEST_FIELD_URL)
+            timestamp = meta.get(config.NEST_FIELD_TIMESTAMP) or timestamp or data_file.stem
 
         record = Record(
             params=params,
@@ -216,6 +234,7 @@ class Raccoon:
         self.bag[endpoint][params_key] = record
 
 
+
     # write to bag
     def _stash(self, endpoint, record):
         params_key = self._params_key(record.params)
@@ -224,6 +243,7 @@ class Raccoon:
             self.bag[endpoint] = {}
 
         self.bag[endpoint][params_key] = record
+
 
 
     # write to nest
@@ -244,7 +264,7 @@ class Raccoon:
             config.NEST_FIELD_META: {
                 config.NEST_FIELD_BIN: self.bin,
                 config.NEST_FIELD_VERSION: self.config.get(config.NEST_FIELD_VERSION),
-                config.NEST_FIELD_HASH: self.config.get(config.NEST_FIELD_HASH),
+                config.NEST_FIELD_HASH: self._bin_hash(),
                 config.NEST_FIELD_ENDPOINT: endpoint,
                 config.NEST_FIELD_PARAMS: record.params,
                 config.NEST_FIELD_TIMESTAMP: record.timestamp,
@@ -255,6 +275,7 @@ class Raccoon:
 
         with data_path.open("w", encoding=config.FILE_ENCODING_UTF8) as f:
             yaml.safe_dump(payload, f, allow_unicode=True, sort_keys=False)
+
 
 
     # helpers
@@ -316,6 +337,9 @@ class Raccoon:
             return None
 
         return max(files, key=lambda p: p.stem)
+
+    def _bin_hash(self):
+        return self._bin_hash_value
 
     def _timestamp(self):
         return datetime.now().strftime("%Y%m%d_%H%M%S")
