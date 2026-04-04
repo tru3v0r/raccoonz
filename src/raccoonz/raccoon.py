@@ -8,7 +8,7 @@ from .bin import load as load_bin
 from .errors import EndpointNotFoundError, BinKeyError
 from .fetcher.factory import build_fetcher
 from .parser.factory import build_parser
-
+from .record import Record
 
 
 class Raccoon:
@@ -88,24 +88,10 @@ class Raccoon:
         
         timestamp = self._timestamp()
 
-        # write to bag
-        self._stash(
-            endpoint=endpoint,
-            params=params,
-            url=url,
-            html=html,
-            data=result,
-            timestamp=timestamp,
-        )
+        record = Record(params, url, html, result, timestamp)
 
-        # write to nest
-        self._hoard(
-            endpoint=endpoint,
-            params=params,
-            html=html,
-            data=result,
-            timestamp=timestamp,
-        )
+        self._stash(endpoint, record)
+        self._hoard(endpoint, record)
         
         # return object
         if result_type == config.RESULT_TYPE_OBJECT:
@@ -176,7 +162,6 @@ class Raccoon:
     def _pack_one(self, endpoint, params):
         params_key = self._params_key(params)
 
-        # already loaded
         if endpoint in self.bag and params_key in self.bag[endpoint]:
             return
 
@@ -215,36 +200,44 @@ class Raccoon:
 
 
     # write to bag
-    def _stash(self, endpoint, params, url, html, data, timestamp):
-        params_key = self._params_key(params)
+    def _stash(self, endpoint, record):
+        params_key = self._params_key(record.params)
 
         if endpoint not in self.bag:
             self.bag[endpoint] = {}
 
-        self.bag[endpoint][params_key] = {
-            config.BAG_FIELD_PARAMS: params,
-            config.BAG_FIELD_URL: url,
-            config.BAG_FIELD_HTML: html,
-            config.BAG_FIELD_DATA: data,
-            config.BAG_FIELD_TIMESTAMP: timestamp,
-        }
+        self.bag[endpoint][params_key] = record
 
-    
+
     # write to nest
-    def _hoard(self, endpoint, params, html, data, timestamp):
-        raw_dir = self._raw_dir_params(endpoint, params)
-        data_dir = self._data_dir_params(endpoint, params)
+    def _hoard(self, endpoint, record):
+        raw_dir = self._raw_dir_params(endpoint, record.params)
+        data_dir = self._data_dir_params(endpoint, record.params)
 
         raw_dir.mkdir(parents=True, exist_ok=True)
         data_dir.mkdir(parents=True, exist_ok=True)
 
-        raw_path = raw_dir / f"{timestamp}.html"
-        data_path = data_dir / f"{timestamp}.yaml"
+        raw_path = raw_dir / f"{record.timestamp}.html"
+        data_path = data_dir / f"{record.timestamp}.yaml"
 
-        raw_path.write_text(html, encoding=config.FILE_ENCODING_UTF8)
+        if record.html is not None:
+            raw_path.write_text(record.html, encoding=config.FILE_ENCODING_UTF8)
+
+        payload = {
+            config.NEST_FIELD_META: {
+                config.NEST_FIELD_BIN: self.bin,
+                config.NEST_FIELD_VERSION: self.config.get("version"),
+                config.NEST_FIELD_HASH: self.config.get("hash"),
+                config.NEST_FIELD_ENDPOINT: endpoint,
+                config.NEST_FIELD_PARAMS: record.params,
+                config.NEST_FIELD_TIMESTAMP: record.timestamp,
+                config.NEST_FIELD_URL: record.url,
+            },
+            config.NEST_FIELD_DATA: record.data,
+        }
 
         with data_path.open("w", encoding=config.FILE_ENCODING_UTF8) as f:
-            yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+            yaml.safe_dump(payload, f, allow_unicode=True, sort_keys=False)
 
 
     # helpers
