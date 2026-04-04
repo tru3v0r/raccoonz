@@ -1,6 +1,9 @@
 name: workbc
 url: "https://www.workbc.ca"
-author: "Valentin Venom"
+author:
+  name: "trevor"
+  email: "helloimtrevor@proton.me"
+  website: "https://github.com/tru3v0r/"
 version: 0.0.1
 comment: "The Canadian BC Job Board."
 

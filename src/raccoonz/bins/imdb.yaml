@@ -1,6 +1,8 @@
 name: imdb
 url: "https://www.imdb.com"
-author: "Valentin Venom"
+author:
+  name: "trevor"
+  website: "https://github.com/tru3v0r/"
 version: 0.0.1
 comment: "The first raccoonz bin ever."
 
@@ -104,30 +106,29 @@ endpoints:
               - "[data-testid='title-cast'] [data-testid='title-cast-header'] h3 span.ipc-title__subtext"
           type: text
 
-        fields:
-          actor:
-            _name:
-              select:
-                css:
-                  - "a[data-testid='title-cast-item__actor']"
-            _id:
-              select:
-                css:
-                  - "a[data-testid='title-cast-item__actor']"
-              extract:
-                attr: href
-              filter: extract_id_from_link
-            _link:
-              select:
-                css:
-                  - "a[data-testid='title-cast-item__actor']"
-              extract:
-                attr: href
-              filter: clean_link
-            _role:
-              select:
-                css:
-                  - "ul[data-testid='cast-item-characters-list'] li"
+        actors:
+          _name:
+            select:
+              css:
+                - "a[data-testid='title-cast-item__actor']"
+          _id:
+            select:
+              css:
+                - "a[data-testid='title-cast-item__actor']"
+            extract:
+              attr: href
+            filter: extract_id_from_link
+          _link:
+            select:
+              css:
+                - "a[data-testid='title-cast-item__actor']"
+            extract:
+              attr: href
+            filter: clean_link
+          _role:
+            select:
+              css:
+                - "ul[data-testid='cast-item-characters-list'] li"
       storyline:
         select:
           css:
