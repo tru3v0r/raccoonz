@@ -14,7 +14,13 @@ from .parser.factory import build_parser
 class Raccoon:
 
 
-    def __init__(self, bin: str, debug: bool=False, **kwargs):
+    def __init__(
+            self,
+            bin: str,
+            packing_mode=config.PACKING_MODE_LAZY, 
+            debug: bool=False,
+            **kwargs
+    ):
         self.bin = bin
         self.config = load_bin(bin)
         self.debug = debug
@@ -30,13 +36,17 @@ class Raccoon:
 
         self.bag = {}
         self.nest_root = Path(config.NEST_PATH) / self.bin
+        
+        # eager packing mode
+        if packing_mode == config.PACKING_MODE_EAGER:
+            self._pack()
 
 
     def dig(
             self, 
             endpoint, 
             params, 
-            refresh=False,
+            refresh=False, 
             result_type=config.RESULT_TYPE_DICT
     ):
 
