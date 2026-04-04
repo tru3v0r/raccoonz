@@ -96,22 +96,22 @@ endpoints:
             - ".job-number td + td"
 
       requirements:
-        key:
+        _key:
           select:
             css:
               - ".job-description-details [class^='job-']:not(:last-child) h3"
-        value:
+        _value:
           select:
             css:
               - ".job-description-details [class^='job-']:not(:last-child) ul li"
         
 
       apply_mode:
-        key:
+        _key:
           select:
             css:
               - ".how-to-apply div"
-        value:
+        _value:
           select:
             css:
               - ".how-to-apply div div"
