@@ -152,11 +152,11 @@ class Raccoon:
                 params = self._params_from_key(params_key)
 
                 if raw_file:
-                    html = raw_file.read_text(encoding="utf-8")
+                    html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8)
                     timestamp = raw_file.stem
 
                 if data_file:
-                    with data_file.open("r", encoding="utf-8") as f:
+                    with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
                         data = yaml.safe_load(f)
                     timestamp = timestamp or data_file.stem
 
@@ -194,11 +194,11 @@ class Raccoon:
         timestamp = None
 
         if raw_file:
-            html = raw_file.read_text(encoding="utf-8")
+            html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8)
             timestamp = raw_file.stem
 
         if data_file:
-            with data_file.open("r", encoding="utf-8") as f:
+            with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
                 data = yaml.safe_load(f)
             timestamp = timestamp or data_file.stem
 
@@ -241,9 +241,9 @@ class Raccoon:
         raw_path = raw_dir / f"{timestamp}.html"
         data_path = data_dir / f"{timestamp}.yaml"
 
-        raw_path.write_text(html, encoding="utf-8")
+        raw_path.write_text(html, encoding=config.FILE_ENCODING_UTF8)
 
-        with data_path.open("w", encoding="utf-8") as f:
+        with data_path.open("w", encoding=config.FILE_ENCODING_UTF8) as f:
             yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
 
 

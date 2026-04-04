@@ -1,3 +1,5 @@
+FILE_ENCODING_UTF8 = "utf-8"
+
 DEFAULT_FETCHER = "bs4"
 DEFAULT_PARSER = "playwright"
 
