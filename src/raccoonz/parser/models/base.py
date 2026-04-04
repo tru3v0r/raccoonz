@@ -10,8 +10,25 @@ class BaseParser(ABC):
     def parse(self, data: Any, fields: dict, careless: bool=False) -> dict:
         pass
 
-        # recursive reading
+    
+    @abstractmethod
+    def _select(self, source, key, value, errors):
+        pass
 
+    @abstractmethod
+    def _extract(self, elements, value):
+        pass
+
+    @abstractmethod
+    def _filter(self):
+        pass
+
+    @abstractmethod
+    def _type(self):
+        pass
+
+
+    # recursive reading
     def _walk(self, node, callback, path=""):
         result = {}
 
