@@ -1,8 +1,51 @@
 from abc import ABC, abstractmethod
 from typing import Any
+import raccoonz.constants.bin_keys as bin_keys
 
 
 class BaseParser(ABC):
+
+
     @abstractmethod
     def parse(self, data: Any, fields: dict, careless: bool=False) -> dict:
         pass
+
+        # recursive reading
+
+    def _walk(self, node, callback, path=""):
+        result = {}
+
+        for key, value in node.items():
+            full_key = f"{path}.{key}" if path else key
+
+            if self._is_leaf(value):
+                result[key] = callback(full_key, value)
+
+            elif self._is_branch(value):
+                result[key] = self._walk(value, callback, full_key)
+
+            else:
+                result[key] = None
+
+        return result
+    
+    
+    def _is_leaf(self, value):
+        return (
+            isinstance(value, dict)
+            and bin_keys.FIELD_SELECT in value
+        )
+
+
+    def _is_branch(self, value):
+        if not isinstance(value, dict):
+            return False
+
+        config_keys = {
+            bin_keys.FIELD_SELECT,
+            bin_keys.FIELD_EXTRACT,
+            bin_keys.FIELD_FILTERS,
+            bin_keys.FIELD_TYPE,
+        }
+
+        return not any(k in value for k in config_keys)
