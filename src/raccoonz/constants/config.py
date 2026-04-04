@@ -1,5 +1,7 @@
 FILE_ENCODING_UTF8 = "utf-8"
 
+BINS_PATH = "src/raccoonz/bins" \
+
 DEFAULT_FETCHER = "bs4"
 DEFAULT_PARSER = "playwright"
 
