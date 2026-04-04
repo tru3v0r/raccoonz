@@ -6,4 +6,4 @@ class Record:
     url: str | None
     html: str | None
     data: dict | None
-    timestamp: str
+    timestamp: str | None
