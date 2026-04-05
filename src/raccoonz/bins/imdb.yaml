@@ -141,10 +141,10 @@ endpoints:
           css:
             - "[data-testid='storyline-plot-summary']"
 
-        trivia:
-          select:
-            css:
-              - "[data-testid='didyouknow-trivia'] a + div"
+      trivia:
+        select:
+          css:
+            - "[data-testid='didyouknow-trivia'] a + div"
 
   full_credits:
     path: "/title/{id}/fullcredits/"
