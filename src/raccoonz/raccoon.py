@@ -5,7 +5,6 @@ import hashlib
 
 from .constants import config
 from .constants import bin_keys
-from .bin import load as load_bin
 from .errors import BinNotFoundError, EndpointNotFoundError, BinKeyError
 from .fetcher.factory import build_fetcher
 from .parser.factory import build_parser

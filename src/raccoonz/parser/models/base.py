@@ -61,7 +61,7 @@ class BaseParser(ABC):
         config_keys = {
             bin_keys.FIELD_SELECT,
             bin_keys.FIELD_EXTRACT,
-            bin_keys.FIELD_FILTERS,
+            bin_keys.FIELD_FILTER,
             bin_keys.FIELD_TYPE,
         }
 

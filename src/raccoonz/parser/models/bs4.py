@@ -12,7 +12,7 @@ class BS4Parser(BaseParser):
 
     def __init__(self, config=None, **kwargs):
         super().__init__()
-        self.filters = (config or {}).get(bin_keys.FIELD_FILTERS, {})
+        self.filters = (config or {}).get(bin_keys.FILTERS, {})
 
 
     def parse(self, html, fields, careless=False):
@@ -83,7 +83,12 @@ class BS4Parser(BaseParser):
 
 
     def _filter(self, values, value):
-        filter_name = value.get(bin_keys.FIELD_FILTERS)
+        print(f"entered _filter")
+        print(f"value: {value}")
+        filter_name = value.get(bin_keys.FIELD_FILTER)
+
+        print("filter_name")
+        print(filter_name)
 
         if not filter_name:
             return values
