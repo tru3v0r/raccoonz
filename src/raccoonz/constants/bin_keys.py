@@ -8,6 +8,9 @@ COMMENT = "comment"
 FETCHER = "fetcher"
 PARSER = "parser"
 
+FETCH = "fetch"
+FETCH_SCROLL_TO = "scroll_to"
+FETCH_WAIT_MS = "wait_ms"
 
 ENDPOINTS = "endpoints"
 ENDPOINT_PATH = "path"

@@ -1,6 +1,6 @@
 from .base import BaseFetcher
 from playwright.sync_api import sync_playwright
-from ...constants import config
+from ...constants import config, bin_keys
 
 
 class PlaywrightFetcher(BaseFetcher):
@@ -9,7 +9,7 @@ class PlaywrightFetcher(BaseFetcher):
         self.headless = headless
         self.timeout = timeout
     
-    def fetch(self, url, wait_selector):
+    def fetch(self, url, wait_selector, fetch_conf=None):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless)
             context = browser.new_context(
@@ -26,6 +26,19 @@ class PlaywrightFetcher(BaseFetcher):
             else:
                 page.wait_for_timeout(config.PLAYWRIGHT_PAGE_TIMEOUT)
             
+            if fetch_conf:
+                wait_ms = fetch_conf.get(bin_keys.FETCH_WAIT_MS, 1000)
+
+                scroll_conf = fetch_conf.get(bin_keys.FETCH_SCROLL_TO)
+                if scroll_conf:
+                    selector = scroll_conf.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS)
+
+                    if selector:
+                        loc = page.locator(selector)
+                        if loc.count() > 0:
+                            loc.first.scroll_into_view_if_needed()
+                            page.wait_for_timeout(wait_ms)
+
             html = page.content()
 
             browser.close()
