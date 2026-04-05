@@ -65,6 +65,7 @@ class Raccoon:
             *,
             refresh=False, 
             result_type=config.RESULT_TYPE_DICT,
+            lang=config.PLAYWRIGHT_CONTEXT_LOCALE,
             **params
     ):
 
@@ -96,11 +97,11 @@ class Raccoon:
                 got=list(params.keys())
             )
         
-        params_key = self._params_key(params)
+        params_key = self._record_key(params, lang)
 
         # lazy packing mode
         if self.packing_mode == config.PACKING_MODE_LAZY:
-            self._pack_one(endpoint, **params)
+            self._pack_one(endpoint, lang=lang, **params)
         
         cached = self.bag.get(endpoint, {}).get(params_key)
         if not refresh and cached and cached.data is not None:
@@ -113,7 +114,8 @@ class Raccoon:
         html = self.fetcher.fetch(
             url,
             wait_selector=wait_selector,
-            fetch_conf=fetch_conf
+            fetch_conf=fetch_conf,
+            lang=lang
         )
 
         result = self.parser.parse(
@@ -122,7 +124,14 @@ class Raccoon:
         
         timestamp = self._timestamp()
 
-        record = Record(params, url, html, result, timestamp)
+        record = Record(
+            params,
+            url,
+            html,
+            result,
+            timestamp,
+            lang=lang
+        )
 
         self._stash(endpoint, record)
         self._hoard(endpoint, record)
@@ -138,140 +147,131 @@ class Raccoon:
 
     # load everything from nest to bag (eager)
     def _pack(self):
-        endpoints = self.config.get(bin_keys.ENDPOINTS, {})
+        if not self.nest_root.exists():
+            return
 
-        for endpoint in endpoints:
-            raw_dir = self._raw_dir_endpoint(endpoint)
-            data_dir = self._data_dir_endpoint(endpoint)
+        for lang_dir in self.nest_root.iterdir():
+            if not lang_dir.is_dir():
+                continue
 
-            params_dirs = set()
+            lang = lang_dir.name
 
-            if raw_dir.exists():
-                params_dirs.update(
-                    p.name for p in raw_dir.iterdir() if p.is_dir()
-                )
-
-            if data_dir.exists():
-                params_dirs.update(
-                    p.name for p in data_dir.iterdir() if p.is_dir()
-                )
-
-            for params_key in params_dirs:
-                raw_dir = raw_dir / params_key
-                data_dir = data_dir / params_key
-
-                raw_file = self._latest_file(raw_dir, "*.html") if raw_dir.exists() else None
-                data_file = self._latest_file(data_dir, "*.yaml") if data_dir.exists() else None
-
-                if not raw_file and not data_file:
+            for endpoint_dir in lang_dir.iterdir():
+                if not endpoint_dir.is_dir():
                     continue
 
-                html = None
-                data = None
-                timestamp = None
-                url = None
-                params = self._params_from_key(params_key)
+                endpoint = endpoint_dir.name
+                data_dir = endpoint_dir / "data"
+                raw_dir = endpoint_dir / "raw"
 
-                if raw_file:
-                    html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8)
-                    timestamp = raw_file.stem
+                if not data_dir.exists():
+                    continue
 
-                if data_file:
+                for data_file in data_dir.glob("*.yaml"):
                     with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
                         payload = yaml.safe_load(f) or {}
 
                     meta = payload.get(config.NEST_FIELD_META, {})
                     data = payload.get(config.NEST_FIELD_DATA)
-                    params = meta.get(config.NEST_FIELD_PARAMS, params)
+
+                    params = meta.get(config.NEST_FIELD_PARAMS, {})
+                    timestamp = meta.get(config.NEST_FIELD_TIMESTAMP) or data_file.stem.rsplit("_", 1)[-1]
                     url = meta.get(config.NEST_FIELD_URL)
-                    timestamp = meta.get(config.NEST_FIELD_TIMESTAMP) or timestamp or data_file.stem
+                    file_lang = meta.get(config.NEST_FIELD_LANG, lang)
 
-                record = Record(
-                    params=params,
-                    url=url,
-                    html=html,
-                    data=data,
-                    timestamp=timestamp,
-                )
+                    params_key = self._params_key(params)
+                    raw_file = raw_dir / f"{params_key}_{timestamp}.html"
+                    html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8) if raw_file.exists() else None
 
-                if endpoint not in self.bag:
-                    self.bag[endpoint] = {}
+                    record = Record(
+                        params=params,
+                        url=url,
+                        html=html,
+                        data=data,
+                        timestamp=timestamp,
+                        lang=file_lang,
+                    )
 
-                self.bag[endpoint][params_key] = record
+                    if endpoint not in self.bag:
+                        self.bag[endpoint] = {}
+
+                    self.bag[endpoint][self._record_key(params, file_lang)] = record
 
 
 
     # load latest endpoint from nest to bag (lazy)
-    def _pack_one(self, endpoint, **params):
+    def _pack_one(self, endpoint, *, lang, **params):
+        record_key = self._record_key(params, lang)
+
+        if endpoint in self.bag and record_key in self.bag[endpoint]:
+            return
+
+        raw_dir = self._raw_dir_endpoint(lang, endpoint)
+        data_dir = self._data_dir_endpoint(lang, endpoint)
+
         params_key = self._params_key(params)
+        pattern = f"{params_key}_*.yaml"
 
-        if endpoint in self.bag and params_key in self.bag[endpoint]:
+        if not data_dir.exists():
             return
 
-        raw_dir = self._raw_dir_endpoint(endpoint) / params_key
-        data_dir = self._data_dir_endpoint(endpoint) / params_key
-
-        raw_file = self._latest_file(raw_dir, "*.html") if raw_dir.exists() else None
-        data_file = self._latest_file(data_dir, "*.yaml") if data_dir.exists() else None
-
-        if not raw_file and not data_file:
+        data_files = [p for p in data_dir.glob(pattern) if p.is_file()]
+        if not data_files:
             return
 
-        html = None
-        data = None
-        timestamp = None
-        url = None
+        data_file = max(data_files, key=lambda p: p.stem.rsplit("_", 1)[-1])
 
-        if raw_file:
-            html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8)
-            timestamp = raw_file.stem
+        with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
+            payload = yaml.safe_load(f) or {}
 
-        if data_file:
-            with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
-                payload = yaml.safe_load(f) or {}
+        meta = payload.get(config.NEST_FIELD_META, {})
+        data = payload.get(config.NEST_FIELD_DATA)
+        timestamp = meta.get(config.NEST_FIELD_TIMESTAMP) or data_file.stem.rsplit("_", 1)[-1]
+        url = meta.get(config.NEST_FIELD_URL)
+        file_params = meta.get(config.NEST_FIELD_PARAMS, params)
+        file_lang = meta.get(config.NEST_FIELD_LANG, lang)
 
-            meta = payload.get(config.NEST_FIELD_META, {})
-            data = payload.get(config.NEST_FIELD_DATA)
-            params = meta.get(config.NEST_FIELD_PARAMS, params)
-            url = meta.get(config.NEST_FIELD_URL)
-            timestamp = meta.get(config.NEST_FIELD_TIMESTAMP) or timestamp or data_file.stem
+        raw_file = raw_dir / f"{params_key}_{timestamp}.html"
+        html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8) if raw_file.exists() else None
 
         record = Record(
-            params=params,
+            params=file_params,
             url=url,
             html=html,
             data=data,
             timestamp=timestamp,
+            lang=file_lang,
         )
 
         if endpoint not in self.bag:
             self.bag[endpoint] = {}
 
-        self.bag[endpoint][params_key] = record
-
+        self.bag[endpoint][record_key] = record
 
 
     # write to bag
     def _stash(self, endpoint, record):
-        params_key = self._params_key(record.params)
+        record_key = self._record_key(record.params, record.lang)
 
         if endpoint not in self.bag:
             self.bag[endpoint] = {}
 
-        self.bag[endpoint][params_key] = record
+        self.bag[endpoint][record_key] = record
 
 
 
     # write to nest
     def _hoard(self, endpoint, record):
-        raw_dir = self._raw_dir_params(endpoint, record.params)
-        data_dir = self._data_dir_params(endpoint, record.params)
+        raw_dir = self._raw_dir_endpoint(record.lang, endpoint)
+        data_dir = self._data_dir_endpoint(record.lang, endpoint)
 
         raw_dir.mkdir(parents=True, exist_ok=True)
         data_dir.mkdir(parents=True, exist_ok=True)
 
-        raw_path = raw_dir / f"{record.timestamp}.html"
-        data_path = data_dir / f"{record.timestamp}.yaml"
+        stem = self._record_stem(record.params, record.timestamp)
+
+        raw_path = raw_dir / f"{stem}.html"
+        data_path = data_dir / f"{stem}.yaml"
 
         if record.html is not None:
             raw_path.write_text(record.html, encoding=config.FILE_ENCODING_UTF8)
@@ -282,6 +282,7 @@ class Raccoon:
                 config.NEST_FIELD_VERSION: self.config.get(config.NEST_FIELD_VERSION),
                 config.NEST_FIELD_HASH: self._bin_hash(),
                 config.NEST_FIELD_ENDPOINT: endpoint,
+                config.NEST_FIELD_LANG: record.lang,
                 config.NEST_FIELD_PARAMS: record.params,
                 config.NEST_FIELD_TIMESTAMP: record.timestamp,
                 config.NEST_FIELD_URL: record.url,
@@ -293,20 +294,27 @@ class Raccoon:
             yaml.safe_dump(payload, f, allow_unicode=True, sort_keys=False)
 
 
-
     # helpers
 
-    def _raw_dir_endpoint(self, endpoint):
-        return self.nest_root / config.NEST_PATH_RAW / endpoint
-    
-    def _raw_dir_params(self, endpoint, params):
-         return self._raw_dir_endpoint(endpoint) / self._params_key(params)
+    def _lang_dir(self, lang):
+        return self.nest_root / self._safe_path_part(lang)
 
-    def _data_dir_endpoint(self, endpoint):
-        return self.nest_root / config.NEST_PATH_DATA / endpoint
-    
-    def _data_dir_params(self, endpoint, params):
-        return self._data_dir_endpoint(endpoint) / self._params_key(params)
+
+    def _endpoint_dir(self, lang, endpoint):
+        return self._lang_dir(lang) / endpoint
+
+
+    def _raw_dir_endpoint(self, lang, endpoint):
+        return self._endpoint_dir(lang, endpoint) / config.NEST_PATH_RAW
+
+
+    def _data_dir_endpoint(self, lang, endpoint):
+        return self._endpoint_dir(lang, endpoint) / config.NEST_PATH_DATA
+
+
+    def _record_key(self, params, lang):
+        return f"{self._safe_path_part(lang)}::{self._params_key(params)}"
+
 
     def _params_key(self, params):
         if not params:
@@ -314,26 +322,16 @@ class Raccoon:
 
         parts = []
         for key in sorted(params):
-            value = str(params[key])
             safe_key = self._safe_path_part(key)
-            safe_value = self._safe_path_part(value)
+            safe_value = self._safe_path_part(params[key])
             parts.append(f"{safe_key}={safe_value}")
 
-        return "__".join(parts)
+        return ",".join(parts)
 
-    def _params_from_key(self, params_key):
-        if not params_key or params_key == "_":
-            return {}
 
-        params = {}
+    def _record_stem(self, params, timestamp):
+        return f"{self._params_key(params)}_{timestamp}"
 
-        for part in params_key.split("__"):
-            if "=" not in part:
-                continue
-            key, value = part.split("=", 1)
-            params[key] = value
-
-        return params
 
     def _safe_path_part(self, value):
         forbidden = '<>:"/\\|?*'

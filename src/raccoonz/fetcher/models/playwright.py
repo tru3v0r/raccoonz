@@ -3,19 +3,32 @@ from playwright.sync_api import sync_playwright
 from ...constants import config, bin_keys
 
 
+
 class PlaywrightFetcher(BaseFetcher):
 
     def __init__(self, headless=config.PLAYWRIGHT_HEADLESS, timeout=config.PLAYWRIGHT_TIMEOUT):
         self.headless = headless
         self.timeout = timeout
     
-    def fetch(self, url, wait_selector, fetch_conf=None):
+
+
+    def fetch(
+            self,
+            url,
+            wait_selector,
+            fetch_conf=None,
+            lang=config.PLAYWRIGHT_CONTEXT_LOCALE
+    ):
+        
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless)
             context = browser.new_context(
                 user_agent=config.PLAYWRIGHT_CONTEXT_USER_AGENT,
-                locale=config.PLAYWRIGHT_CONTEXT_LOCALE,
-                extra_http_headers=config.PLAYWRIGHT_EXTRA_HTTP_HEADERS,
+                locale=lang,
+                extra_http_headers= {
+                    **config.PLAYWRIGHT_EXTRA_HTTP_HEADERS,
+                    "Accept-Language": lang
+                }
             )
             page = context.new_page()
             page.goto(url, timeout=self.timeout, wait_until=config.PLAYWRIGHT_PAGE_WAIT_UNTIL)
