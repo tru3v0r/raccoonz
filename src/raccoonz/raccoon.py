@@ -5,7 +5,7 @@ import hashlib
 
 from .constants import config
 from .constants import bin_keys
-from .errors import BinNotFoundError, EndpointNotFoundError, BinKeyError
+from .errors import BinNotFoundError, URLKeyError, EndpointNotFoundError, BinKeyError
 from .fetcher.factory import build_fetcher
 from .parser.factory import build_parser
 from .record import Record
@@ -62,9 +62,10 @@ class Raccoon:
     def dig(
             self, 
             endpoint, 
-            params, 
+            *,
             refresh=False, 
-            result_type=config.RESULT_TYPE_DICT
+            result_type=config.RESULT_TYPE_DICT,
+            **params
     ):
 
         endpoints = self.config.get("endpoints", {})
@@ -83,12 +84,23 @@ class Raccoon:
         if not path:
             raise BinKeyError(bin, bin_keys.ENDPOINT_PATH)
         
-        url = f"{base_url.rstrip('/')}/{path.lstrip('/')}".format(**params)
+        try:
+            url = f"{base_url.rstrip('/')}/{path.lstrip('/')}".format(**params)
+        except KeyError as e:
+            missing = e.args[0]
+            expected = [p.strip("{}") for p in path.split("/") if "{" in p]
+            raise URLKeyError(
+                missing,
+                endpoint,
+                expected=expected,
+                got=list(params.keys())
+            )
+        
         params_key = self._params_key(params)
 
         # lazy packing mode
         if self.packing_mode == config.PACKING_MODE_LAZY:
-            self._pack_one(endpoint, params)
+            self._pack_one(endpoint, **params)
         
         cached = self.bag.get(endpoint, {}).get(params_key)
         if not refresh and cached and cached.data is not None:
@@ -190,7 +202,7 @@ class Raccoon:
 
 
     # load latest endpoint from nest to bag (lazy)
-    def _pack_one(self, endpoint, params):
+    def _pack_one(self, endpoint, **params):
         params_key = self._params_key(params)
 
         if endpoint in self.bag and params_key in self.bag[endpoint]:

@@ -52,6 +52,14 @@ class DiggingError(RaccoonError):
 
 #validation
 
+class URLKeyError(RaccoonError):
+    default = (
+        "Missing parameter '{param}' for endpoint '{endpoint}'. "
+        "Expected: {expected}, got: {got}"
+    )
+    fields = ("param", "endpoint", "expected", "got")
+
+
 class BinKeyError(RaccoonError):
     default = "Could not find expected '{key}' key in bin '{bin}'."
 
