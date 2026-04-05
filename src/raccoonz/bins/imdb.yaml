@@ -9,6 +9,12 @@ comment: "The first raccoonz bin ever."
 fetcher: playwright
 parser: bs4
 
+fetch:
+  scroll_to:
+    select:
+      css: "[data-testid='storyline-plot-summary']"
+  wait_ms: 1500
+
 
 endpoints:
 
@@ -129,11 +135,16 @@ endpoints:
             select:
               css:
                 - "ul[data-testid='cast-item-characters-list'] li"
+
       storyline:
         select:
           css:
-            - "[data-testid='storyline-plot-summary'] [role='presentation']"
+            - "[data-testid='storyline-plot-summary']"
 
+        trivia:
+          select:
+            css:
+              - "[data-testid='didyouknow-trivia'] a + div"
 
   full_credits:
     path: "/title/{id}/fullcredits/"
