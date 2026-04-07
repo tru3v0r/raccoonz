@@ -55,7 +55,7 @@ endpoints:
         note:
           select:
             css:
-              - "[data-testid='hero-rating-bar__aggregate-rating__score'] span:first-child"
+              - "[data-testid='hero-parent'] div:nth-child(3) [data-testid='hero-rating-bar__aggregate-rating__score'] span:first-child"
               - "[data-testid='rating-histogram'] div span svg+span"
           type: float
         votes:
