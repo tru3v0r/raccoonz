@@ -66,7 +66,7 @@ class BaseParser(ABC):
             bin_keys.FIELD_EXTRACT,
             bin_keys.FIELD_FILTER,
             bin_keys.FIELD_TYPE,
-            "_each",
+            bin_keys.CONTROL_FIELD_EACH,
         }
 
         return not any(k in value for k in config_keys)
