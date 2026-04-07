@@ -113,28 +113,33 @@ endpoints:
           type: text
 
         actors:
-          _name:
+          _each:
             select:
               css:
-                - "a[data-testid='title-cast-item__actor']"
-          _id:
-            select:
-              css:
-                - "a[data-testid='title-cast-item__actor']"
-            extract:
-              attr: href
-            filter: extract_id_from_link
-          _link:
-            select:
-              css:
-                - "a[data-testid='title-cast-item__actor']"
-            extract:
-              attr: href
-            filter: clean_link
-          _role:
-            select:
-              css:
-                - "ul[data-testid='cast-item-characters-list'] li"
+                - "[data-testid='title-cast'] [data-testid='title-cast-item']"
+            fields:
+              name:
+                select:
+                  css:
+                    - "a[data-testid='title-cast-item__actor']"
+              id:
+                select:
+                  css:
+                    - "a[data-testid='title-cast-item__actor']"
+                extract:
+                  attr: href
+                filter: extract_id_from_link
+              link:
+                select:
+                  css:
+                    - "a[data-testid='title-cast-item__actor']"
+                extract:
+                  attr: href
+                filter: clean_link
+              role:
+                select:
+                  css:
+                    - "ul[data-testid='cast-item-characters-list'] li"
 
       storyline:
         select:
