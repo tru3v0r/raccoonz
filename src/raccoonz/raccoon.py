@@ -249,6 +249,7 @@ class Raccoon:
         self.bag[endpoint][record_key] = record
 
 
+
     # write to bag
     def _stash(self, endpoint, record):
         record_key = self._record_key(record.params, record.lang)
@@ -294,26 +295,32 @@ class Raccoon:
             yaml.safe_dump(payload, f, allow_unicode=True, sort_keys=False)
 
 
+
     # helpers
 
     def _lang_dir(self, lang):
         return self.nest_root / self._safe_path_part(lang)
 
 
+
     def _endpoint_dir(self, lang, endpoint):
         return self._lang_dir(lang) / endpoint
+
 
 
     def _raw_dir_endpoint(self, lang, endpoint):
         return self._endpoint_dir(lang, endpoint) / config.NEST_PATH_RAW
 
 
+
     def _data_dir_endpoint(self, lang, endpoint):
         return self._endpoint_dir(lang, endpoint) / config.NEST_PATH_DATA
 
 
+
     def _record_key(self, params, lang):
         return f"{self._safe_path_part(lang)}::{self._params_key(params)}"
+
 
 
     def _params_key(self, params):
@@ -329,8 +336,10 @@ class Raccoon:
         return ",".join(parts)
 
 
+
     def _record_stem(self, params, timestamp):
         return f"{self._params_key(params)}_{timestamp}"
+
 
 
     def _safe_path_part(self, value):
@@ -342,6 +351,8 @@ class Raccoon:
 
         return result.strip() or "_"
 
+
+
     def _latest_file(self, directory: Path, pattern: str):
         if not directory.exists():
             return None
@@ -352,8 +363,12 @@ class Raccoon:
 
         return max(files, key=lambda p: p.stem)
 
+
+
     def _bin_hash(self):
         return self._bin_hash_value
+
+
 
     def _timestamp(self):
         return datetime.now().strftime("%Y%m%d_%H%M%S")
