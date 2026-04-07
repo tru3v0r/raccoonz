@@ -76,4 +76,4 @@ raccoonz could not exist without these brilliant open-source libraries:
 
 ## Documentation
 
-If you need any further information, please read the [complete documentation](docs/).
+If you need any further information, please read the complete [documentation](docs/index.md).
