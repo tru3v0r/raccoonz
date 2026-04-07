@@ -17,11 +17,12 @@ ENDPOINT_PATH = "path"
 ENDPOINT_WAIT_SELECTOR = "wait_selector"
 
 
-FIELDS = "fields"
+CONTROL_FIELD_EACH = "_each"
+CONTROL_FIELD_KEY = "_key"
+CONTROL_FIELD_VALUE = "_value"
 
-FIELD_DYNAMIC_PREFIX = "_"
-FIELD_DYNAMIC_KEY = "key"
-FIELD_DYNAMIC_VALUE = "value"
+
+FIELDS = "fields"
 
 FIELD_SELECT = "select"
 FIELD_SELECT_CSS = "css"

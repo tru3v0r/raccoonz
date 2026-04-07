@@ -45,12 +45,15 @@ class BaseParser(ABC):
                 result[key] = None
 
         return result
-    
-    
+
+
     def _is_leaf(self, value):
         return (
             isinstance(value, dict)
-            and bin_keys.FIELD_SELECT in value
+            and (
+                bin_keys.FIELD_SELECT in value
+                or "_each" in value
+            )
         )
 
 
@@ -63,6 +66,7 @@ class BaseParser(ABC):
             bin_keys.FIELD_EXTRACT,
             bin_keys.FIELD_FILTER,
             bin_keys.FIELD_TYPE,
+            "_each",
         }
 
         return not any(k in value for k in config_keys)

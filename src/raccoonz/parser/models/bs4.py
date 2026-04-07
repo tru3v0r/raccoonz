@@ -15,11 +15,18 @@ class BS4Parser(BaseParser):
         self.filters = (config or {}).get(bin_keys.FILTERS, {})
 
 
+
     def parse(self, html, fields, careless=False):
         soup = BeautifulSoup(html, "html.parser")
         errors = []
 
         def parse_leaf(key, value):
+            if isinstance(value, dict) and bin_keys.CONTROL_FIELD_EACH in value:
+                current = self._parse_each(soup, key, value, errors)
+                if current is None:
+                    errors.append(f"Missing field: {key}")
+                return current
+
             current = self._select(soup, key, value, errors)
 
             if not current:
@@ -65,6 +72,7 @@ class BS4Parser(BaseParser):
         return None
 
 
+
     def _extract(self, elements, value):
         extract = value.get(bin_keys.FIELD_EXTRACT, bin_keys.FIELD_EXTRACT_INNER_TEXT)
 
@@ -80,6 +88,7 @@ class BS4Parser(BaseParser):
 
         values = [v for v in values if v is not None]
         return values
+
 
 
     def _filter(self, values, value):
@@ -113,6 +122,65 @@ class BS4Parser(BaseParser):
                 result.append(match.group(1))
 
         return result
+
+
+
+    def _parse_each(self, soup, key, value, errors):
+        each_conf = value[bin_keys.CONTROL_FIELD_EACH]
+
+        item_selectors = each_conf.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS, [])
+        item_fields = each_conf.get("fields", {})
+
+        items = None
+        for selector in item_selectors:
+            print(f"selector: {selector}")
+
+            if not selector:
+                errors.append(f"Empty selector for field: {key}")
+                continue
+
+            try:
+                elements = soup.select(selector)
+            except Exception:
+                errors.append(f"Invalid selector for field '{key}': {selector}")
+                continue
+
+            if elements:
+                items = elements
+                break
+
+        if not items:
+            return None
+
+        records = []
+
+        for item in items:
+            record = {}
+
+            for child_key, child_value in item_fields.items():
+                current = self._select(item, child_key, child_value, errors)
+
+                if not current:
+                    record[child_key] = None
+                    continue
+
+                for step in (self._extract, self._filter):
+                    current = step(current, child_value)
+                    if current is None:
+                        break
+
+                if current is None or len(current) == 0:
+                    record[child_key] = None
+                elif len(current) == 1:
+                    record[child_key] = current[0]
+                else:
+                    record[child_key] = current
+
+            if any(v is not None for v in record.values()):
+                records.append(record)
+
+        return records
+
 
 
     def _type(self, values, value):
