@@ -12,7 +12,7 @@ It is first composed of different sections:
 - Filters
 
 
-### Header
+## Header
 
 It contains basic information about the bin and the author:
 
@@ -29,7 +29,7 @@ comment: "The first raccoonz bin ever."
 
 ---
 
-### Parameters
+## Parameters
 
 The first section determines which modules are used for our two steps:
 - The **fetcher**: the module that retrieves the raw data (the DOM). Possible values are `requests` and `playwright`.
@@ -42,7 +42,7 @@ parser: bs4
 
 ---
 
-### Endpoints
+## Endpoints
 
 An endpoint refers to a page displaying content.
 It is composed of two elements:
@@ -50,7 +50,7 @@ It is composed of two elements:
 - Fields
 
 
-#### Path
+### Path
 
 The path is the URL part that comes after the domain name. It can be of two types:
 - **Static**: points to a unique page that does not require any additional parameter, such as follows:
@@ -76,12 +76,12 @@ albert.dig("movie", id="tt0120737")
 ```
 
 
-#### Fields
+### Fields
 
 The fields are the actual data containers of the page. You can name them however you want, as long as it does not conflict with control fields.
 
 
-##### Select
+#### Select
 
 Fields need **at least** a select t **control field** to retrieve data. Currently, the only supported selector type is `css`:
 ```yaml
@@ -97,7 +97,7 @@ The example above shows a list of two CSS selectors, so that if the first one do
 That is all for the **select** control field. Now, let's see other control fields that form the **field pipeline**.
 
 
-##### Extract
+#### Extract
 
 By default, the data extracted from the select control field is the **inner text**. However, you can decide to extract data from another attribute:
 ```yaml
@@ -112,7 +112,7 @@ This will extract the `href` attribute value from the selected `a` tag.
 
 Curently, only `attr` is supported for the `extract` control, and its only accepted value is `href`.
 
-##### Filter
+#### Filter
 
 Let's say the data we extracted so far is not clean enough to be stored. We can perform an additional operation to filter out elements we don't need. In the case of our link, our current output will look like this:
 
@@ -140,7 +140,7 @@ The filter, which is declared in the [Filters](#filters) section of the bin, wil
 There is one more operation to complete the pipeline, data typing.
 
 
-##### Type
+#### Type
 
 This final stage allows to force a certain type onto the data. Let's take another example to illustrate this use case:
 
@@ -158,16 +158,16 @@ Note: you don't need a "list" type as if more than one element is retrieved from
 
 ---
 
-#### Dynamic control fields
+### Dynamic control fields
 
 Dynamic control fields allow you to structure data the way you want.
 
 
-##### _each
+#### _each
 
 ---
 
-### Filters
+## Filters
 
 The last section of the bin allows to declare filters that can be called using `filter`, as seen in the [Filter](#filter) section of the Fields pipeline.
 
