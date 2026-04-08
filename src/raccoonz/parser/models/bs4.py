@@ -21,7 +21,7 @@ class BS4Parser(BaseParser):
         errors = []
 
         def parse_leaf(key, value):
-            if isinstance(value, dict) and bin_keys.CONTROL_FIELD_EACH in value:
+            if isinstance(value, dict) and bin_keys.CONTROL_FIELD_GROUP in value:
                 current = self._parse_each(soup, key, value, errors)
                 if current is None:
                     errors.append(f"Missing field: {key}")
@@ -126,7 +126,7 @@ class BS4Parser(BaseParser):
 
 
     def _parse_each(self, soup, key, value, errors):
-        each_conf = value[bin_keys.CONTROL_FIELD_EACH]
+        each_conf = value[bin_keys.CONTROL_FIELD_GROUP]
 
         item_selectors = each_conf.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS, [])
         item_fields = each_conf.get("fields", {})

@@ -17,7 +17,7 @@ ENDPOINT_PATH = "path"
 ENDPOINT_WAIT_SELECTOR = "wait_selector"
 
 
-CONTROL_FIELD_EACH = "_each"
+CONTROL_FIELD_GROUP = "_group"
 CONTROL_FIELD_KEY = "_key"
 CONTROL_FIELD_VALUE = "_value"
 
