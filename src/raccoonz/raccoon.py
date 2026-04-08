@@ -2,6 +2,7 @@ from pathlib import Path
 from datetime import datetime
 import yaml
 import hashlib
+import re
 
 from .constants import config
 from .constants import bin_keys
@@ -36,7 +37,7 @@ class Raccoon:
         self.parser = build_parser(bin_parser, config=self.config, **kwargs)
 
         self.bag = {}
-        self.nest_root = Path(config.NEST_PATH) / self.bin
+        self.nest_root = Path(config.NEST_PATH)
 
         # eager packing mode
         if packing_mode == config.PACKING_MODE_EAGER:
@@ -150,24 +151,30 @@ class Raccoon:
         if not self.nest_root.exists():
             return
 
-        for lang_dir in self.nest_root.iterdir():
-            if not lang_dir.is_dir():
+        for bin_dir in self.nest_root.iterdir():
+            if not bin_dir.is_dir():
                 continue
 
-            lang = lang_dir.name
-
-            for endpoint_dir in lang_dir.iterdir():
-                if not endpoint_dir.is_dir():
+            for lang_dir in self.nest_root.iterdir():
+                if not lang_dir.is_dir():
                     continue
 
-                endpoint = endpoint_dir.name
-                data_dir = endpoint_dir / "data"
-                raw_dir = endpoint_dir / "raw"
+                lang = lang_dir.name
 
-                if not data_dir.exists():
-                    continue
+                for endpoint_dir in lang_dir.iterdir():
+                    if not endpoint_dir.is_dir():
+                        continue
 
-                for data_file in data_dir.glob("*.yaml"):
+                    endpoint = endpoint_dir.name
+                    data_dir = endpoint_dir / config.NEST_PATH_DATA
+                    raw_dir = endpoint_dir / config.NEST_PATH_RAW
+
+                    if not data_dir.exists():
+                        continue
+
+                    #file with the last alphabetical name
+                    data_file = sorted(data_dir.glob("*.yaml"))[-1]
+
                     with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
                         payload = yaml.safe_load(f) or {}
 
@@ -196,7 +203,6 @@ class Raccoon:
                         self.bag[endpoint] = {}
 
                     self.bag[endpoint][self._record_key(params, file_lang)] = record
-
 
 
     # load latest endpoint from nest to bag (lazy)
