@@ -22,8 +22,11 @@ class Raccoon:
     ):
 
         self.bins = {}
+        self.fetchers = {}
+        self.parsers = {}
         self.bag = {}
         self.nest_root = Path(config.NEST_PATH)
+        self.fully_packed = False
 
         self.debug = debug
 
@@ -68,10 +71,12 @@ class Raccoon:
         bin_config = bin_data[config.BIN_CONFIG]
 
         bin_fetcher = bin_config.get(bin_keys.FETCHER, default_fetcher)
-        bin_parser = bin_config.get(bin_keys.PARSER, default_parser)
+        if bin_fetcher not in self.fetchers:
+            self.fetchers[bin_fetcher] = build_fetcher(bin_fetcher)
 
-        self.fetcher = build_fetcher(bin_fetcher)
-        self.parser = build_parser(bin_parser, config=bin_config)
+        bin_parser = bin_config.get(bin_keys.PARSER, default_parser)
+        if bin_parser not in self.parsers:
+            self.parsers[bin_parser] = build_parser(bin_parser, config=bin_config)
 
         endpoints = bin_config.get(bin_keys.ENDPOINTS, {})
 
@@ -106,7 +111,7 @@ class Raccoon:
         if self.packing_mode == config.PACKING_MODE_LAZY and not refresh:
             self._pack_one(bin, endpoint, lang=lang, **params)
         
-        cached = self.bag.get(endpoint, {}).get(params_key)
+        cached = self.bag[bin].get(endpoint, {}).get(params_key)
         if not refresh and cached and cached.data is not None:
             return cached.data
         
@@ -114,14 +119,14 @@ class Raccoon:
         
         fetch_conf = bin_config.get(bin_keys.FETCH)
 
-        html = self.fetcher.fetch(
+        html = self.fetchers[bin_fetcher].fetch(
             url,
             wait_selector=wait_selector,
             fetch_conf=fetch_conf,
             lang=lang
         )
 
-        result = self.parser.parse(
+        result = self.parsers[bin_parser].parse(
             html,
             ep.get(bin_keys.FIELDS))
         
@@ -146,6 +151,16 @@ class Raccoon:
 
         return result
     
+
+
+    def serve(
+            self,
+            bin: str,
+            bins: list,
+            port=8000
+    ):
+        pass
+
 
 
     # load everything from nest to bag (eager)
@@ -207,6 +222,8 @@ class Raccoon:
                         self.bag[bin][endpoint] = {}
 
                     self.bag[bin][endpoint][self._record_key(params, file_lang)] = record
+
+        self.fully_packed = True
 
 
     # load latest endpoint from nest to bag (lazy)
