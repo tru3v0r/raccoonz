@@ -17,67 +17,70 @@ class Raccoon:
 
     def __init__(
             self,
-            bin: str,
             packing_mode=config.PACKING_MODE_LAZY, 
             debug: bool=False,
-            **kwargs
     ):
-        self.bin = bin
-        self.config = self._load_bin()
-        self.packing_mode = packing_mode
-        self.debug = debug
 
-        default_fetcher = config.DEFAULT_FETCHER
-        default_parser = config.DEFAULT_PARSER
-
-        bin_fetcher = self.config.get(bin_keys.FETCHER, default_fetcher)
-        bin_parser = self.config.get(bin_keys.PARSER, default_parser)
-
-        self.fetcher = build_fetcher(bin_fetcher, **kwargs)
-        self.parser = build_parser(bin_parser, config=self.config, **kwargs)
-
+        self.bins = {}
         self.bag = {}
         self.nest_root = Path(config.NEST_PATH)
 
-        # eager packing mode
+        self.debug = debug
+
+        self.packing_mode = packing_mode
         if packing_mode == config.PACKING_MODE_EAGER:
             self._pack()
 
 
 
-    def _load_bin(self) ->dict:
-        bin_path = Path(config.BINS_PATH) / f"{self.bin}.yaml"
+    def _load_bin(self, bin) ->dict:
+        bin_path = Path(config.BINS_PATH) / f"{bin}.yaml"
 
         if not bin_path.exists():
             raise BinNotFoundError(bin=bin)
         
         content = bin_path.read_text(encoding=config.FILE_ENCODING_UTF8)
-        config_data = yaml.safe_load(content) or {}
+        data = yaml.safe_load(content) or {}
 
-        self._bin_hash_value = hashlib.sha256(content.encode()).hexdigest()
+        hash = hashlib.sha256(content.encode()).hexdigest()
 
-        return config_data
+        return { config.BIN_CONFIG: data, config.BIN_HASH: hash }
         
 
 
     def dig(
             self, 
-            endpoint, 
+            bin: str,
+            endpoint: str, 
             *,
             refresh=False, 
             result_type=config.RESULT_TYPE_DICT,
             lang=config.PLAYWRIGHT_CONTEXT_LOCALE,
             **params
     ):
+        
+        bin_data = self._load_bin(bin)
+        self.bins[bin] = bin_data
 
-        endpoints = self.config.get("endpoints", {})
+        default_fetcher = config.DEFAULT_FETCHER
+        default_parser = config.DEFAULT_PARSER
+
+        bin_config = bin_data[config.BIN_CONFIG]
+
+        bin_fetcher = bin_config.get(bin_keys.FETCHER, default_fetcher)
+        bin_parser = bin_config.get(bin_keys.PARSER, default_parser)
+
+        self.fetcher = build_fetcher(bin_fetcher)
+        self.parser = build_parser(bin_parser, config=bin_config)
+
+        endpoints = bin_config.get(bin_keys.ENDPOINTS, {})
 
         if endpoint not in endpoints:
             raise EndpointNotFoundError(endpoint)
         
         ep = endpoints[endpoint]
 
-        base_url = self.config.get(bin_keys.URL)
+        base_url = bin_config.get(bin_keys.URL)
         path = ep.get(bin_keys.ENDPOINT_PATH)
 
         if not base_url:
@@ -100,17 +103,16 @@ class Raccoon:
         
         params_key = self._record_key(params, lang)
 
-        # lazy packing mode
-        if self.packing_mode == config.PACKING_MODE_LAZY:
-            self._pack_one(endpoint, lang=lang, **params)
+        if self.packing_mode == config.PACKING_MODE_LAZY and not refresh:
+            self._pack_one(bin, endpoint, lang=lang, **params)
         
         cached = self.bag.get(endpoint, {}).get(params_key)
         if not refresh and cached and cached.data is not None:
             return cached.data
         
-        wait_selector = self.config.get(bin_keys.ENDPOINT_WAIT_SELECTOR)
+        wait_selector = bin_config.get(bin_keys.ENDPOINT_WAIT_SELECTOR)
         
-        fetch_conf = self.config.get(bin_keys.FETCH)
+        fetch_conf = bin_config.get(bin_keys.FETCH)
 
         html = self.fetcher.fetch(
             url,
@@ -134,8 +136,8 @@ class Raccoon:
             lang=lang
         )
 
-        self._stash(endpoint, record)
-        self._hoard(endpoint, record)
+        self._stash(bin, endpoint, record)
+        self._hoard(bin, endpoint, record)
         
         # return object
         if result_type == config.RESULT_TYPE_OBJECT:
@@ -154,6 +156,8 @@ class Raccoon:
         for bin_dir in self.nest_root.iterdir():
             if not bin_dir.is_dir():
                 continue
+
+            bin = bin_dir.name
 
             for lang_dir in self.nest_root.iterdir():
                 if not lang_dir.is_dir():
@@ -200,20 +204,20 @@ class Raccoon:
                     )
 
                     if endpoint not in self.bag:
-                        self.bag[endpoint] = {}
+                        self.bag[bin][endpoint] = {}
 
-                    self.bag[endpoint][self._record_key(params, file_lang)] = record
+                    self.bag[bin][endpoint][self._record_key(params, file_lang)] = record
 
 
     # load latest endpoint from nest to bag (lazy)
-    def _pack_one(self, endpoint, *, lang, **params):
+    def _pack_one(self, bin, endpoint, *, lang, **params):
         record_key = self._record_key(params, lang)
 
-        if endpoint in self.bag and record_key in self.bag[endpoint]:
+        if bin in self.bag and endpoint in self.bag[bin] and record_key in self.bag[bin][endpoint]:
             return
 
-        raw_dir = self._raw_dir_endpoint(lang, endpoint)
-        data_dir = self._data_dir_endpoint(lang, endpoint)
+        raw_dir = self._raw_dir_endpoint(bin, lang, endpoint)
+        data_dir = self._data_dir_endpoint(bin, lang, endpoint)
 
         params_key = self._params_key(params)
         pattern = f"{params_key}_*.yaml"
@@ -249,28 +253,31 @@ class Raccoon:
             lang=file_lang,
         )
 
-        if endpoint not in self.bag:
-            self.bag[endpoint] = {}
+        if bin not in self.bag:
+            self.bag[bin] = {}
 
-        self.bag[endpoint][record_key] = record
+        if endpoint not in self.bag[bin]:
+            self.bag[bin][endpoint] = {}
+
+        self.bag[bin][endpoint][record_key] = record
 
 
 
     # write to bag
-    def _stash(self, endpoint, record):
+    def _stash(self, bin, endpoint, record):
         record_key = self._record_key(record.params, record.lang)
 
-        if endpoint not in self.bag:
+        if bin not in self.bag or endpoint not in self.bag[bin]:
             self.bag[endpoint] = {}
 
-        self.bag[endpoint][record_key] = record
+        self.bag[bin][endpoint][record_key] = record
 
 
 
     # write to nest
-    def _hoard(self, endpoint, record):
-        raw_dir = self._raw_dir_endpoint(record.lang, endpoint)
-        data_dir = self._data_dir_endpoint(record.lang, endpoint)
+    def _hoard(self, bin, endpoint, record):
+        raw_dir = self._raw_dir_endpoint(bin, record.lang, endpoint)
+        data_dir = self._data_dir_endpoint(bin, record.lang, endpoint)
 
         raw_dir.mkdir(parents=True, exist_ok=True)
         data_dir.mkdir(parents=True, exist_ok=True)
@@ -285,9 +292,9 @@ class Raccoon:
 
         payload = {
             config.NEST_FIELD_META: {
-                config.NEST_FIELD_BIN: self.bin,
-                config.NEST_FIELD_VERSION: self.config.get(config.NEST_FIELD_VERSION),
-                config.NEST_FIELD_HASH: self._bin_hash(),
+                config.NEST_FIELD_BIN: bin,
+                config.NEST_FIELD_VERSION: self.bins[bin][config.BIN_CONFIG].get(config.NEST_FIELD_VERSION),
+                config.NEST_FIELD_HASH: self._bin_hash(bin),
                 config.NEST_FIELD_ENDPOINT: endpoint,
                 config.NEST_FIELD_LANG: record.lang,
                 config.NEST_FIELD_PARAMS: record.params,
@@ -304,23 +311,28 @@ class Raccoon:
 
     # helpers
 
-    def _lang_dir(self, lang):
-        return self.nest_root / self._safe_path_part(lang)
+    def _bin_dir(self, bin):
+        return self.nest_root / bin
 
 
 
-    def _endpoint_dir(self, lang, endpoint):
-        return self._lang_dir(lang) / endpoint
+    def _lang_dir(self, bin, lang):
+        return self._bin_dir(bin) / self._safe_path_part(lang)
 
 
 
-    def _raw_dir_endpoint(self, lang, endpoint):
-        return self._endpoint_dir(lang, endpoint) / config.NEST_PATH_RAW
+    def _endpoint_dir(self, bin, lang, endpoint):
+        return self._lang_dir(bin, lang) / endpoint
 
 
 
-    def _data_dir_endpoint(self, lang, endpoint):
-        return self._endpoint_dir(lang, endpoint) / config.NEST_PATH_DATA
+    def _raw_dir_endpoint(self, bin, lang, endpoint):
+        return self._endpoint_dir(bin, lang, endpoint) / config.NEST_PATH_RAW
+
+
+
+    def _data_dir_endpoint(self, bin, lang, endpoint):
+        return self._endpoint_dir(bin, lang, endpoint) / config.NEST_PATH_DATA
 
 
 
@@ -371,8 +383,8 @@ class Raccoon:
 
 
 
-    def _bin_hash(self):
-        return self._bin_hash_value
+    def _bin_hash(self, bin):
+        return self.bins[bin][config.BIN_HASH]
 
 
 

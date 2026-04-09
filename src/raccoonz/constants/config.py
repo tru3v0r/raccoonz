@@ -1,9 +1,11 @@
 FILE_ENCODING_UTF8 = "utf-8"
 
-BINS_PATH = "src/raccoonz/bins" \
+BINS_PATH = "src/raccoonz/bins"
+BIN_CONFIG = "config"
+BIN_HASH = "hash"
 
-DEFAULT_FETCHER = "bs4"
-DEFAULT_PARSER = "playwright"
+DEFAULT_FETCHER = "playwright"
+DEFAULT_PARSER = "bs4"
 
 BAG_FIELD_PARAMS = "params"
 BAG_FIELD_URL = "url"
