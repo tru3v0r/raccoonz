@@ -129,7 +129,7 @@ class BS4Parser(BaseParser):
         each_conf = value[bin_keys.CONTROL_FIELD_GROUP]
 
         item_selectors = each_conf.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS, [])
-        item_fields = each_conf.get("fields", {})
+        item_fields = each_conf.get(bin_keys.FIELDS, {})
 
         items = None
         for selector in item_selectors:
