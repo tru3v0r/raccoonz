@@ -1,5 +1,29 @@
 # Bin
 
+## Table of contents
+
+- [Bin](#bin)
+  - [Table of contents](#table-of-contents)
+  - [Description](#description)
+  - [Structure](#structure)
+  - [Header](#header)
+  - [Parameters](#parameters)
+  - [Endpoints](#endpoints)
+    - [Path](#path)
+    - [Fields](#fields)
+  - [Operators](#operators)
+    - [Shape operators](#shape-operators)
+      - [\_group](#_group)
+      - [\_key](#_key)
+      - [\_value](#_value)
+    - [Field operators](#field-operators)
+      - [\_select](#_select)
+      - [\_extract](#_extract)
+      - [\_filter](#_filter)
+      - [\_type](#_type)
+  - [Filters](#filters)
+
+## Description
 A bin is a YAML config file that defines how the data will be retrieved, processed, and stored.
 
 
@@ -91,24 +115,28 @@ endpoints:
 ```
  You can nest them as many times as your data structure requires it.
 
-#### Operators
+## Operators
+
+Operators are YAML keys that perform operations on the data. By convention ,they start with the underscore `_`.
+
+There are two sorts of operators:
 
 - Shape operators: they control **how** data is structured in the final result. There are three: `_group`, `_key`, and `_value`.
 - Field operators : they compose a pipeline that controls **what** data is retrieved from the DOM. There are four: `_select`, `_extract`, `filter`, and `_type`.
 
 
-##### Shape operators
+### Shape operators
 
-###### _group
+#### _group
 
-###### _key
+#### _key
 
-###### _value
+#### _value
 
 
-##### Field operators
+### Field operators
 
-###### _select
+#### _select
 
 Fields need **at least** a `_select` field operator to work with. Currently, the only supported selector type is `css`:
 ```yaml
@@ -122,7 +150,7 @@ Fields need **at least** a `_select` field operator to work with. Currently, the
 The example above shows a list of two CSS selectors, so that if the first one does not return any value (which can be common as some website often change their DOM), another selection attempt is performed with the second one. You can add as many as you want.
 
 
-###### _extract
+#### _extract
 
 By default, the data extracted from the `_select` operator is the selected element's **inner text**. However, you can extract data from another attribute:
 ```yaml
@@ -137,7 +165,7 @@ This will extract the `href` attribute value from the selected `a` tag.
 
 Curently, only `attr` is supported for the `_extract` control, and its only accepted value is `href`.
 
-###### _filter
+#### _filter
 
 Let's say the data we extracted so far is not clean enough to be stored. We can perform an additional operation to filter out elements we don't need. In the case of our link, our current output will look like this:
 
@@ -165,7 +193,7 @@ The filter, which is declared in the [Filters](#filters) section of the bin, per
 There is one more operation to complete the pipeline, data casting.
 
 
-###### _type
+#### _type
 
 This final stage allows to force a certain type onto the data. Let's take another example to illustrate this use case:
 
