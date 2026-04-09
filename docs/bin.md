@@ -78,41 +78,66 @@ albert.dig("movie", id="tt0120737")
 
 ### Fields
 
-The fields are the actual data containers of the page. You can name them however you want, as long as it does not conflict with control fields.
+The fields are the actual data containers of the page.
+You are free to name them however you want, as long as it does not collide with YAML special characters, like `#`, `!`, `&` or `*`. However, it is not advised to prefix them with the underscore (`_`), as this character is visually associated with operators (see below).
+```yaml
+endpoints:
+  movie:
+    fields:
+      title: ...
+      year: ...
+      certificate: ...
+      ...
+```
+ You can nest them as many times as your data structure requires it.
+
+#### Operators
+
+- Shape operators: they control **how** data is structured in the final result. There are three: `_group`, `_key`, and `_value`.
+- Field operators : they compose a pipeline that controls **what** data is retrieved from the DOM. There are four: `_select`, `_extract`, `filter`, and `_type`.
 
 
-#### Select
+##### Shape operators
 
-Fields need **at least** a select t **control field** to retrieve data. Currently, the only supported selector type is `css`:
+###### _group
+
+###### _key
+
+###### _value
+
+
+##### Field operators
+
+###### _select
+
+Fields need **at least** a `_select` field operator to work with. Currently, the only supported selector type is `css`:
 ```yaml
     fields:
       title:
-        select:
+        _select:
           css:
             - "[data-testid='hero__primary-text']"
             - "h1 span"
 ```
-The example above shows a list of two CSS selectors, so that if the first one does not return any value (which can be common as some website often change their DOM), the second one will try. You can add as many as you want.
-
-That is all for the **select** control field. Now, let's see other control fields that form the **field pipeline**.
+The example above shows a list of two CSS selectors, so that if the first one does not return any value (which can be common as some website often change their DOM), another selection attempt is performed with the second one. You can add as many as you want.
 
 
-#### Extract
+###### _extract
 
-By default, the data extracted from the select control field is the **inner text**. However, you can decide to extract data from another attribute:
+By default, the data extracted from the `_select` operator is the selected element's **inner text**. However, you can extract data from another attribute:
 ```yaml
       link:
-        select:
+        _select:
           css:
             - "a[data-testid='title-cast-item__actor']"
-        extract:
+        _extract:
           attr: href
 ```
 This will extract the `href` attribute value from the selected `a` tag.
 
-Curently, only `attr` is supported for the `extract` control, and its only accepted value is `href`.
+Curently, only `attr` is supported for the `_extract` control, and its only accepted value is `href`.
 
-#### Filter
+###### _filter
 
 Let's say the data we extracted so far is not clean enough to be stored. We can perform an additional operation to filter out elements we don't need. In the case of our link, our current output will look like this:
 
@@ -122,50 +147,41 @@ Which contains a lot of unnecessary elements:
 - The domain name, that we alreay know from the bin `url` key
 - the `?ref_=...` param, that we will not have the use of.
 
-We then can use a **filter** control field in our pipeline:
+We then can use a `_filter` field operator in our pipeline:
 
 ```yaml
       link:
-        select:
+        _select:
           css:
             - "a[data-testid='title-cast-item__actor']"
-        extract:
+        _extract:
           attr: href
-        filter: clean_link
+        _filter: clean_link
 ```
-The filter, which is declared in the [Filters](#filters) section of the bin, will perform the cleaning operation to retrieve desired data:
+The filter, which is declared in the [Filters](#filters) section of the bin, performs the cleaning operation to retrieve desired data:
 
 `/name/nm0000704/`
 
-There is one more operation to complete the pipeline, data typing.
+There is one more operation to complete the pipeline, data casting.
 
 
-#### Type
+###### _type
 
 This final stage allows to force a certain type onto the data. Let's take another example to illustrate this use case:
 
 ```yaml
       year:
-        select:
+        _select:
           css:
             - "h1 + ul[role='presentation'] li:first-child"
-        type: int
+        _type: int
 ```
-`type` values accepted: `text` (by default), `int`, `float` and `bool`.
+`_type` values accepted: `text` (by default), `int`, `float` and `bool`.
 
 Note: you don't need a "list" type as if more than one element is retrieved from the endpoint, it will automatically return a list of the declared `type`.
 
-
 ---
 
-### Dynamic control fields
-
-Dynamic control fields allow you to structure data the way you want.
-
-
-#### _each
-
----
 
 ## Filters
 
