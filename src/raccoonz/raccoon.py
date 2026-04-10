@@ -189,7 +189,7 @@ class Raccoon:
                 }
 
                 if dig:
-                    match["data"] = self.dig(
+                    match = self.dig(
                         bin_name,
                         endpoint_name,
                         refresh=False,
