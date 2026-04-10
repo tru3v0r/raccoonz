@@ -154,6 +154,55 @@ class Raccoon:
     
 
 
+    def sniff(self, url: str, *, fetch=False, lang=None):
+        matches = []
+
+        url_base, url_path = self._split_base_and_path(url)
+
+        for bin_name in self._list_bins():
+            bin_data = self._load_bin(bin_name)
+            bin_config = bin_data[config.BIN_CONFIG]
+
+            base_url = bin_config.get(bin_keys.URL, "")
+            endpoints = bin_config.get(bin_keys.ENDPOINTS, {})
+
+            if not self._base_matches(url_base, base_url):
+                continue
+
+            for endpoint_name, ep in endpoints.items():
+                path = ep.get(bin_keys.ENDPOINT_PATH)
+                if not path:
+                    continue
+
+                regex, keys = self._path_to_regex(path)
+
+                m = re.match(regex, url_path)
+                if not m:
+                    continue
+
+                params = dict(zip(keys, m.groups()))
+
+                match = {
+                    "bin": bin_name,
+                    "endpoint": endpoint_name,
+                    "params": params,
+                }
+
+                if fetch:
+                    match["data"] = self.dig(
+                        bin_name,
+                        endpoint_name,
+                        refresh=True,
+                        lang=lang or config.PLAYWRIGHT_CONTEXT_LOCALE,
+                        **params
+                    )
+
+                matches.append(match)
+
+        return matches or None
+
+
+
     def serve(
             self,
             bin: str=None,
@@ -264,8 +313,8 @@ class Raccoon:
         uvicorn.run(app, host="127.0.0.1", port=port)
 
 
-
-    def nudge(self, bin, endpoint, *, lang, **params):
+    # send a signal to reload endpoint
+    def nudge(self, bin: str, endpoint: str, *, lang: str, **params):
         self._reload_one(bin, endpoint, lang=lang, **params)
 
 
@@ -538,6 +587,63 @@ class Raccoon:
         return datetime.now().strftime("%Y%m%d_%H%M%S")
     
 
+
+    # sniff helpers
+
+    def _normalize_url_for_sniff(self, url: str):
+        url = url.strip()
+        url = re.sub(r"^https?://", "", url, flags=re.IGNORECASE)
+        url = url.lstrip("/")
+        url = url.rstrip("/")
+        return url
+
+
+
+    def _split_base_and_path(self, url: str):
+        normalized = self._normalize_url_for_sniff(url)
+        parts = normalized.split("/", 1)
+        base = parts[0]
+        path = "/" + parts[1] if len(parts) > 1 else "/"
+        return base, path
+    
+
+
+    def _base_matches(self, url_base: str, bin_base_url: str):
+        bin_base = self._normalize_url_for_sniff(bin_base_url).split("/", 1)[0]
+
+        if url_base == bin_base:
+            return True
+
+        if url_base.startswith("www.") and url_base[4:] == bin_base:
+            return True
+
+        if bin_base.startswith("www.") and bin_base[4:] == url_base:
+            return True
+
+        return False
+
+
+
+    def _path_to_regex(self, path):
+        keys = re.findall(r"{(.*?)}", path)
+        regex = re.escape(path)
+
+        for key in keys:
+            regex = regex.replace(r"\{" + key + r"\}", r"([^/]+)")
+
+        regex = "^" + regex.rstrip("/") + "/?$"
+        
+        return regex, keys
+
+
+
+    def _list_bins(self):
+        bins_path = Path(config.BINS_PATH)
+        return [p.stem for p in bins_path.glob("*.yaml")]
+
+
+
+    #serve helpers
 
     def _merge_filters(self, single, multiple):
         values = set()
