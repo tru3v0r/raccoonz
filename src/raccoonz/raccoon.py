@@ -154,7 +154,7 @@ class Raccoon:
     
 
 
-    def sniff(self, url: str, *, fetch=False, lang=None):
+    def sniff(self, url: str, *, dig=False, lang=config.PLAYWRIGHT_CONTEXT_LOCALE):
         matches = []
 
         url_base, url_path = self._split_base_and_path(url)
@@ -188,12 +188,12 @@ class Raccoon:
                     "params": params,
                 }
 
-                if fetch:
+                if dig:
                     match["data"] = self.dig(
                         bin_name,
                         endpoint_name,
-                        refresh=True,
-                        lang=lang or config.PLAYWRIGHT_CONTEXT_LOCALE,
+                        refresh=False,
+                        lang=lang,
                         **params
                     )
 
