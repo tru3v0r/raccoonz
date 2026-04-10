@@ -12,6 +12,7 @@ from .parser.factory import build_parser
 from .record import Record
 
 
+
 class Raccoon:
 
 
@@ -111,7 +112,7 @@ class Raccoon:
         if self.packing_mode == config.PACKING_MODE_LAZY and not refresh:
             self._pack_one(bin, endpoint, lang=lang, **params)
         
-        cached = self.bag[bin].get(endpoint, {}).get(params_key)
+        cached = self.bag.get(bin, {}).get(endpoint, {}).get(params_key)
         if not refresh and cached and cached.data is not None:
             return cached.data
         
@@ -191,11 +192,9 @@ class Raccoon:
                     if not data_dir.exists():
                         continue
 
-                    #file with the last alphabetical name
-                    data_file = sorted(data_dir.glob("*.yaml"))[-1]
-
-                    with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
-                        payload = yaml.safe_load(f) or {}
+                    for data_file in data_dir.glob("*.yaml"):
+                        with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
+                            payload = yaml.safe_load(f) or {}
 
                     meta = payload.get(config.NEST_FIELD_META, {})
                     data = payload.get(config.NEST_FIELD_DATA)
@@ -237,7 +236,7 @@ class Raccoon:
         data_dir = self._data_dir_endpoint(bin, lang, endpoint)
 
         params_key = self._params_key(params)
-        pattern = f"{params_key}_*.yaml"
+        pattern = f"{params_key}.yaml"
 
         if not data_dir.exists():
             return
@@ -246,14 +245,13 @@ class Raccoon:
         if not data_files:
             return
 
-        data_file = max(data_files, key=lambda p: p.stem.rsplit("_", 1)[-1])
-
+        data_file = data_files[0]
         with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
             payload = yaml.safe_load(f) or {}
 
         meta = payload.get(config.NEST_FIELD_META, {})
         data = payload.get(config.NEST_FIELD_DATA)
-        timestamp = meta.get(config.NEST_FIELD_TIMESTAMP) or data_file.stem.rsplit("_", 1)[-1]
+        timestamp = meta.get(config.NEST_FIELD_TIMESTAMP)
         url = meta.get(config.NEST_FIELD_URL)
         file_params = meta.get(config.NEST_FIELD_PARAMS, params)
         file_lang = meta.get(config.NEST_FIELD_LANG, lang)
@@ -284,8 +282,11 @@ class Raccoon:
     def _stash(self, bin, endpoint, record):
         record_key = self._record_key(record.params, record.lang)
 
-        if bin not in self.bag or endpoint not in self.bag[bin]:
-            self.bag[endpoint] = {}
+        if bin not in self.bag:
+            self.bag[bin] = {}
+            
+        if endpoint not in self.bag[bin]:
+            self.bag[bin][endpoint] = {}
 
         self.bag[bin][endpoint][record_key] = record
 
@@ -299,10 +300,21 @@ class Raccoon:
         raw_dir.mkdir(parents=True, exist_ok=True)
         data_dir.mkdir(parents=True, exist_ok=True)
 
-        stem = self._record_stem(record.params, record.timestamp)
+        stem = self._params_key(record.params)
 
         raw_path = raw_dir / f"{stem}.html"
         data_path = data_dir / f"{stem}.yaml"
+
+        expired_dir = data_dir / config.NEST_PATH_EXPIRED
+        expired_dir.mkdir(exist_ok=True)
+
+        if data_path.exists():
+            old = data_dir / f"{stem}.yaml"
+            old.rename(expired_dir / f"{stem}_{self._timestamp()}.yaml")
+
+        if raw_path.exists():
+            old = raw_dir / f"{stem}.html"
+            old.rename(raw_dir / config.NEST_PATH_EXPIRED / f"{stem}_{self._timestamp()}.html")
 
         if record.html is not None:
             raw_path.write_text(record.html, encoding=config.FILE_ENCODING_UTF8)
@@ -372,8 +384,8 @@ class Raccoon:
 
 
 
-    def _record_stem(self, params, timestamp):
-        return f"{self._params_key(params)}_{timestamp}"
+    def _record_stem(self, params):
+        return f"{self._params_key(params)}"
 
 
 
