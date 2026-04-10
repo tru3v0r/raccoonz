@@ -156,16 +156,125 @@ class Raccoon:
 
     def serve(
             self,
-            bin: str,
-            bins: list,
-            port=8000
+            bin: str=None,
+            bins: list=None,
+            endpoint: str=None,
+            endpoints: list=None,
+            lang: str=None,
+            port=config.SERVE_DEFAULT_PORT
     ):
-        pass
+        from fastapi import FastAPI, HTTPException, Request
+        import uvicorn
+
+        self._pack()
+
+        app = FastAPI()
+
+        bin_filter = self._merge_filters(bin, bins)
+        endpoint_filter = self._merge_filters(endpoint, endpoints)
+
+        @app.get("/")
+        def serve_root(request: Request):
+            query_params = dict(request.query_params)
+
+            effective_lang = self._resolve_served_lang(
+                requested_lang=query_params.get("lang"),
+                served_lang=lang,
+                bin_filter=bin_filter,
+                endpoint_filter=endpoint_filter,
+                query_params=query_params
+            )
+
+            records = self._served_records(
+                bin_filter=bin_filter,
+                endpoint_filter=endpoint_filter,
+                lang=effective_lang,
+                query_params=self._clean_query_params(query_params)
+            )
+
+            if not records:
+                raise HTTPException(status_code=404, detail="No matching records")
+
+            return self._format_records_response(records)
+
+        @app.get("/{path:path}")
+        def serve_path(path: str, request: Request):
+            parts = [p for p in path.split("/") if p]
+            query_params = dict(request.query_params)
+
+            path_bin = parts[0] if len(parts) >= 1 else None
+            path_endpoint = parts[1] if len(parts) >= 2 else None
+
+            current_bin_filter = {path_bin} if path_bin else bin_filter
+            current_endpoint_filter = {path_endpoint} if path_endpoint else endpoint_filter
+
+            if path_bin and bin_filter is not None and path_bin not in bin_filter:
+                raise HTTPException(status_code=404, detail="Bin not served")
+
+            if path_endpoint and endpoint_filter is not None and path_endpoint not in endpoint_filter:
+                raise HTTPException(status_code=404, detail="Endpoint not served")
+
+            effective_lang = self._resolve_served_lang(
+                requested_lang=query_params.get("lang"),
+                served_lang=lang,
+                bin_filter=current_bin_filter,
+                endpoint_filter=current_endpoint_filter,
+                query_params=query_params
+            )
+
+            records = self._served_records(
+                bin_filter=current_bin_filter,
+                endpoint_filter=current_endpoint_filter,
+                lang=effective_lang,
+                query_params=self._clean_query_params(query_params)
+            )
+
+            if not records:
+                raise HTTPException(status_code=404, detail="No matching records")
+
+            if len(parts) <= 2:
+                return self._format_records_response(records)
+
+            field_path = parts[2:]
+            resolved = []
+
+            for item in records:
+                try:
+                    value = self._resolve_path(item["record"].data, field_path)
+                except (KeyError, IndexError, TypeError):
+                    continue
+
+                resolved.append({
+                    "bin": item["bin"],
+                    "endpoint": item["endpoint"],
+                    "lang": item["record"].lang,
+                    "params": item["record"].params,
+                    "timestamp": item["record"].timestamp,
+                    "value": value,
+                })
+
+            if not resolved:
+                raise HTTPException(status_code=404, detail="Field not found")
+
+            if len(resolved) == 1:
+                return resolved[0]["value"]
+
+            return resolved
+
+        uvicorn.run(app, host="127.0.0.1", port=port)
+
+
+
+    def nudge(self, bin, endpoint, *, lang, **params):
+        self._reload_one(bin, endpoint, lang=lang, **params)
 
 
 
     # load everything from nest to bag (eager)
     def _pack(self):
+
+        self.bag = {}
+
         if not self.nest_root.exists():
             return
 
@@ -175,7 +284,7 @@ class Raccoon:
 
             bin = bin_dir.name
 
-            for lang_dir in self.nest_root.iterdir():
+            for lang_dir in bin_dir.iterdir():
                 if not lang_dir.is_dir():
                     continue
 
@@ -193,34 +302,40 @@ class Raccoon:
                         continue
 
                     for data_file in data_dir.glob("*.yaml"):
+                        if data_file.parent.name == "_expired":
+                            continue
+
                         with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
                             payload = yaml.safe_load(f) or {}
 
-                    meta = payload.get(config.NEST_FIELD_META, {})
-                    data = payload.get(config.NEST_FIELD_DATA)
+                        meta = payload.get(config.NEST_FIELD_META, {})
+                        data = payload.get(config.NEST_FIELD_DATA)
 
-                    params = meta.get(config.NEST_FIELD_PARAMS, {})
-                    timestamp = meta.get(config.NEST_FIELD_TIMESTAMP) or data_file.stem.rsplit("_", 1)[-1]
-                    url = meta.get(config.NEST_FIELD_URL)
-                    file_lang = meta.get(config.NEST_FIELD_LANG, lang)
+                        params = meta.get(config.NEST_FIELD_PARAMS, {})
+                        timestamp = meta.get(config.NEST_FIELD_TIMESTAMP)
+                        url = meta.get(config.NEST_FIELD_URL)
+                        file_lang = meta.get(config.NEST_FIELD_LANG, lang)
 
-                    params_key = self._params_key(params)
-                    raw_file = raw_dir / f"{params_key}_{timestamp}.html"
-                    html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8) if raw_file.exists() else None
+                        params_key = self._params_key(params)
+                        raw_file = raw_dir / f"{params_key}.html"
+                        html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8) if raw_file.exists() else None
 
-                    record = Record(
-                        params=params,
-                        url=url,
-                        html=html,
-                        data=data,
-                        timestamp=timestamp,
-                        lang=file_lang,
-                    )
+                        record = Record(
+                            params=params,
+                            url=url,
+                            html=html,
+                            data=data,
+                            timestamp=timestamp,
+                            lang=file_lang,
+                        )
 
-                    if endpoint not in self.bag:
-                        self.bag[bin][endpoint] = {}
+                        if bin not in self.bag:
+                            self.bag[bin] = {}
 
-                    self.bag[bin][endpoint][self._record_key(params, file_lang)] = record
+                        if endpoint not in self.bag[bin]:
+                            self.bag[bin][endpoint] = {}
+
+                        self.bag[bin][endpoint][self._record_key(params, file_lang)] = record
 
         self.fully_packed = True
 
@@ -338,7 +453,9 @@ class Raccoon:
 
 
 
+
     # helpers
+
 
     def _bin_dir(self, bin):
         return self.nest_root / bin
@@ -419,3 +536,185 @@ class Raccoon:
 
     def _timestamp(self):
         return datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+
+
+    def _merge_filters(self, single, multiple):
+        values = set()
+
+        if single is not None:
+            values.add(single)
+
+        if multiple:
+            values.update(multiple)
+
+        return values or None
+
+
+
+    def _clean_query_params(self, query_params):
+        query_params = dict(query_params)
+        query_params.pop("lang", None)
+        return query_params
+    
+
+
+    def _served_records(self, *, bin_filter=None, endpoint_filter=None, lang=None, query_params=None):
+        results = []
+        query_params = query_params or {}
+
+        for bin_name, endpoints_map in self.bag.items():
+            if bin_filter is not None and bin_name not in bin_filter:
+                continue
+
+            for endpoint_name, records_map in endpoints_map.items():
+                if endpoint_filter is not None and endpoint_name not in endpoint_filter:
+                    continue
+
+                for record in records_map.values():
+                    if lang is not None and record.lang != lang:
+                        continue
+
+                    if not self._record_matches_query(record, query_params):
+                        continue
+
+                    results.append({
+                        "bin": bin_name,
+                        "endpoint": endpoint_name,
+                        "record": record,
+                    })
+
+        return results
+    
+
+
+    def _record_matches_query(self, record, query_params):
+        for key, value in query_params.items():
+            if str(record.params.get(key)) != value:
+                return False
+        return True
+    
+
+
+    def _format_records_response(self, records):
+        if len(records) == 1:
+            record = records[0]["record"]
+            return {
+                "bin": records[0]["bin"],
+                "endpoint": records[0]["endpoint"],
+                "lang": record.lang,
+                "params": record.params,
+                "timestamp": record.timestamp,
+                "url": record.url,
+                "data": record.data,
+            }
+
+        return [
+            {
+                "bin": item["bin"],
+                "endpoint": item["endpoint"],
+                "lang": item["record"].lang,
+                "params": item["record"].params,
+                "timestamp": item["record"].timestamp,
+                "url": item["record"].url,
+                "data": item["record"].data,
+            }
+            for item in records
+        ]
+
+
+
+    def _resolve_path(self, value, parts):
+        current = value
+
+        for part in parts:
+            if isinstance(current, dict):
+                if part not in current:
+                    raise KeyError(part)
+                current = current[part]
+                continue
+
+            if isinstance(current, list):
+                if part == "_count":
+                    return len(current)
+
+                if part.isdigit():
+                    index = int(part) - 1
+                    if index < 0 or index >= len(current):
+                        raise IndexError(part)
+                    current = current[index]
+                    continue
+
+                raise KeyError(part)
+
+            raise TypeError(part)
+
+        return current
+    
+
+    def _resolve_served_lang(self, *, requested_lang=None, served_lang=None, bin_filter=None, endpoint_filter=None, query_params=None):
+        clean_query = self._clean_query_params(query_params or {})
+        candidates = []
+
+        if requested_lang:
+            candidates.append(requested_lang)
+
+        if served_lang:
+            candidates.append(served_lang)
+
+        default_lang = getattr(config, "SERVE_DEFAULT_LANG", None)
+        if default_lang:
+            candidates.append(default_lang)
+
+        for candidate in candidates:
+            if self._has_served_records(
+                bin_filter=bin_filter,
+                endpoint_filter=endpoint_filter,
+                lang=candidate,
+                query_params=clean_query
+            ):
+                return candidate
+
+        return self._first_served_lang(
+            bin_filter=bin_filter,
+            endpoint_filter=endpoint_filter,
+            query_params=clean_query
+        )
+
+
+
+    def _has_served_records(self, *, bin_filter=None, endpoint_filter=None, lang=None, query_params=None):
+        return bool(self._served_records(
+            bin_filter=bin_filter,
+            endpoint_filter=endpoint_filter,
+            lang=lang,
+            query_params=query_params
+        ))
+
+
+
+    def _first_served_lang(self, *, bin_filter=None, endpoint_filter=None, query_params=None):
+        query_params = query_params or {}
+
+        for bin_name, endpoints_map in self.bag.items():
+            if bin_filter is not None and bin_name not in bin_filter:
+                continue
+
+            for endpoint_name, records_map in endpoints_map.items():
+                if endpoint_filter is not None and endpoint_name not in endpoint_filter:
+                    continue
+
+                for record in records_map.values():
+                    if self._record_matches_query(record, query_params):
+                        return record.lang
+
+        return None
+    
+
+    def _reload_one(self, bin, endpoint, *, lang, **params):
+        if bin in self.bag and endpoint in self.bag[bin]:
+            self.bag[bin].pop(endpoint, None)
+            if not self.bag[bin]:
+                self.bag.pop(bin, None)
+
+        self._pack_one(bin, endpoint, lang=lang, **params)
