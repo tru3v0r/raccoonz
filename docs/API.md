@@ -53,6 +53,11 @@ __init__(
 
 ### Parameters
 
+| Param        | Type  | Allowed values  | Default | Example   |
+|--------------|-------|-----------------|---------|-----------|
+| packing_mode | str   | `eager`, `lazy` | `lazy`  | `eager`   |
+| debug        | bool  | `True`, `False` | `False` |-          |
+| params       | dict  | any             | -       |           |
 
 
 #### packing_mode
@@ -90,6 +95,14 @@ dig(
 
 ### Parameters
 
+| Param        | Type  | Allowed values          | Default | Example          |
+|--------------|-------|-------------------------|---------|------------------|
+| bin          | str   | any bin in `src/bins/`  | -       | `users`          |
+| endpoint     | str   | any endpoint in the bin | -       | `list`           |
+| refresh      | bool  | `True`, `False`         | `False` | `True`           |
+| lang         | str   | BCP 47 locale codes     | `en-US` | `fr-FR`          |
+| result_type  | str   | `json`, `object`, `csv` | `json`  | `csv`            |
+| params       | dict  | any                     | -       | `id="tt0120737"` |
 
 
 #### bin
@@ -167,6 +180,14 @@ Allows you to serve data as an API.
 
 ### Parameters
 
+| Param     | Type | Allowed values                | Default | Example     |
+|-----------|------|-------------------------------|---------|-------------|
+| bin       | str  | any bin in `src/bins/`        | -       | `users`     |
+| bins      | list | any bins in `src/bins/`       | -       | `["users"]` |
+| endpoint  | str  | any endpoint in selected bin  | -       | `list`      |
+| endpoints | list | any endpoints in selected bin | -       | `["list"]`  |
+| lang      | str  | BCP 47 locale codes           | `en-US` | `fr-FR`     |
+| port      | str  | valid port number             | `8000`  | `"8080"`    |
 
 
 #### bin
@@ -258,6 +279,13 @@ sniff(
 
 ### Parameters
 
+| Param | Type | Allowed values      | Default | Example                    |
+|-------|------|---------------------|---------|----------------------------|
+| url   | str  | valid URL           | -       | `imdb.com/title/tt0120737` |
+| dig   | bool | `True`, `False`     | `False` | -                          |
+| lang  | str  | BCP 47 locale codes | `en-US` | `fr-FR`                    |
+
+
 #### url
 The URL you want to test against your bins.
 Schemes like `https://` or `http://`, the `www` subdomain  and the end slash `/` are optional, so these examples will return the exact samematch:
@@ -281,3 +309,5 @@ In case of a match, defines if [dig()](#dig) must be performed on the matching e
 ```
 
 #### lang (🚧WIP)
+The language the data is retrieved in.
+<u>Allowed values</u>: [BCP 47 locale codes](https://www.rfc-editor.org/info/bcp47) (e.g. `en-US` (default), `en-GB`, `fr-FR`, `fr-CA`, `es-ES`, `es-MX`, `de-DE`, `it-IT`, `ja-JP`, `zh-CN`, `zh-TW`, `ar-MA`...)
