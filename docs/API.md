@@ -7,12 +7,12 @@
   - [Constructor](#constructor)
     - [Description](#description)
     - [Parameters](#parameters)
-      - [bin](#bin)
       - [packing\_mode](#packing_mode)
       - [debug](#debug)
   - [dig](#dig)
     - [Description](#description-1)
     - [Parameters](#parameters-1)
+      - [bin](#bin)
       - [endpoint](#endpoint)
       - [refresh](#refresh)
       - [lang](#lang)
@@ -46,7 +46,6 @@
 
 ```python
 __init__(
-    bin: str,
     packing_mode: str,
     debug: bool,
     **params
@@ -55,21 +54,27 @@ __init__(
 
 ### Parameters
 
-#### bin
 
 #### packing_mode
+The way data stored in the nest is added to the bag (the cache).
+
+<u>Allowed values</u>: `eager`, `lazy` (default)
+- `eager`: all the data is loaded during instantiation
+- `lazy`: data is loaded when requested, if available
 
 #### debug
-
+<u>Allowed values</u>: `True`, `False` (default)
+- `True`: enables debug mode (verbose logging, diagnostics)
+- `False`: disables debug mode
 ---
 
 ## dig
-
 Returns the data from an endpoint with specific parameters.
 
 ### Description
 ```python
 dig(
+    bin: str,
     endpoint: str,
     refresh: bool,
     lang: str,
@@ -80,17 +85,52 @@ dig(
 
 ### Parameters
 
+#### bin
+The name of the YAML file you want to use.
+
+<u>Allowed values</u>: whatever bin you have in your `src/bins/` directory.
+
 #### endpoint
+The name of the endpoint which data you want to retrieve.
+
+<u>Allowed values:</u> whatever endpoint defined in your bin.
 
 #### refresh
+<u>Allowed values</u>: `True`, `False` (default)
+- `True`: forces a call to remote endpoint, even if data is available locally.
+- `False`: uses local data if available.
 
 #### lang
+The language you want to retrieve the data in.
+<u>Allowed values</u>: [BCP 47 locale codes](https://www.rfc-editor.org/info/bcp47) (e.g. `en-US` (default), `en-GB`, `fr-FR`, `fr-CA`, `es-ES`, `es-MX`, `de-DE`, `it-IT`, `ja-JP`, `zh-CN`, `zh-TW`, `ar-MA`...)
+
+Note: the website might not be able to serve the data in the locale you picked.
 
 #### result_type
+The format you want the data to be returned in.
+
+<u>Allowed values</u>: `json` (default), `object`, `csv`
+- `json`: return a JSON string
+- `object`: return a native `Object()` object, with parameters accessible as attributes:
+```python
+albert = Raccoon()
+movie = albert.dig("imdb", "movie", id="tt0120737", result_type="object")
+print(movie.title)
+print(movie.rating.note)
+```
+This will return:
+```python
+['The Lord of the Rings: The Fellowship of the Ring']
+['8.9']
+```
 
 #### Other parameters
 
-Most endpoint links have a customer parameter that you need to pass to retrieve the data.
+As you can see in the [Path](bin.md#path) section of the Bin documentation, endpoints can be **dynamic**, which means they need a custom parameter to retrieve data. You need to pass it explicitly in the arguments:
+```python
+albert = Raccoon()
+movie = albert.dig("imdb", "movie", id="tt0120737")
+```
 
 ---
 
