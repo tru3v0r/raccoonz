@@ -1,17 +1,27 @@
-# Raccoonz
+# API
+This page describes all `Raccoon` class methods that are used to retrieve, process, structure, and serve data.
+
+In order to best illustrate the workflow, methods are listed in a chronological order.
+
 
 ## Table of contents
 
-- [Raccoonz](#raccoonz)
+- [API](#api)
   - [Table of contents](#table-of-contents)
   - [Constructor](#constructor)
     - [Description](#description)
     - [Parameters](#parameters)
       - [packing\_mode](#packing_mode)
       - [debug](#debug)
-  - [dig](#dig)
+  - [sniff](#sniff)
     - [Description](#description-1)
     - [Parameters](#parameters-1)
+      - [url](#url)
+      - [dig](#dig)
+      - [lang (🚧WIP)](#lang-wip)
+  - [dig](#dig-1)
+    - [Description](#description-2)
+    - [Parameters](#parameters-2)
       - [bin](#bin)
       - [endpoint](#endpoint)
       - [refresh](#refresh)
@@ -19,24 +29,18 @@
       - [result\_type](#result_type)
       - [Other parameters](#other-parameters)
   - [serve](#serve)
-    - [Description](#description-2)
-    - [Parameters](#parameters-2)
+    - [Description](#description-3)
+    - [Parameters](#parameters-3)
       - [bin](#bin-1)
       - [bins](#bins)
       - [endpoint](#endpoint-1)
       - [endpoints](#endpoints)
       - [port](#port)
-    - [lang](#lang-1)
-    - [Call the API](#call-the-api)
-      - [Endpoint format](#endpoint-format)
-      - [Parameters](#parameters-3)
-      - [Data update while serving](#data-update-while-serving)
-  - [sniff](#sniff)
-    - [Description](#description-3)
+      - [lang](#lang-1)
+  - [How to call served API](#how-to-call-served-api)
+    - [Endpoint format](#endpoint-format)
     - [Parameters](#parameters-4)
-      - [url](#url)
-      - [dig](#dig-1)
-      - [lang (🚧WIP)](#lang-wip)
+    - [Data update while serving](#data-update-while-serving)
 
 ---
 ## Constructor
@@ -72,6 +76,58 @@ The way data stored in the nest is added to the bag (the cache).
 <u>Allowed values</u>: `True`, `False` (default)
 - `True`: enables debug mode (verbose logging, diagnostics)
 - `False`: disables debug mode
+
+
+
+---
+
+## sniff
+Reverse-matches a URL to an endpoint defined in your `/bins` directory.
+
+### Description
+
+```python
+sniff(
+  url: str,
+  dig: bool,
+  lang: str
+)
+```
+
+### Parameters
+
+| Param | Type | Allowed values      | Default | Example                    |
+|-------|------|---------------------|---------|----------------------------|
+| url   | str  | valid URL           | -       | `imdb.com/title/tt0120737` |
+| dig   | bool | `True`, `False`     | `False` | -                          |
+| lang  | str  | BCP 47 locale codes | `en-US` | `fr-FR`                    |
+
+
+#### url
+The URL you want to test against your bins.
+Schemes like `https://` or `http://`, the `www` subdomain  and the end slash `/` are optional, so these examples will return the exact samematch:
+- `https://www.imdb.com/title/tt0120737/`
+- `https://imdb.com/title/tt0120737`
+- `http://www.imdb.com/title/tt0120737/`
+- `http://imdb.com/title/tt0120737`
+- `www.imdb.com/title/tt0120737`
+
+#### dig
+In case of a match, defines if [dig()](#dig) must be performed on the matching endpoint.
+
+<u>Allowed values</u>: `True`, `False`
+- `True`: calls `dig()` and returns the result:
+```python
+{'title': ['The Lord of the Rings: The Fellowship of the Ring'], 'year': ['2001'], ... }
+```
+- `False`: returns information about the endpoint:
+```python
+{'bin': 'imdb', 'endpoint': 'movie', 'params': {'id': 'tt0340377'}}
+```
+
+#### lang (🚧WIP)
+The language the data is retrieved in.
+<u>Allowed values</u>: [BCP 47 locale codes](https://www.rfc-editor.org/info/bcp47) (e.g. `en-US` (default), `en-GB`, `fr-FR`, `fr-CA`, `es-ES`, `es-MX`, `de-DE`, `it-IT`, `ja-JP`, `zh-CN`, `zh-TW`, `ar-MA`...)
 
 
 
@@ -216,13 +272,15 @@ In the case of a unique `bin` defined as parameter, targets a list of endpoints 
 #### port
 The port on which you want to serve the API. By default, it is set as 8000.
 
-### lang
+#### lang
 The language you want to serve the data in.
 <u>Allowed values</u>: [BCP 47 locale codes](https://www.rfc-editor.org/info/bcp47) (e.g. `en-US` (default), `en-GB`, `fr-FR`, `fr-CA`, `es-ES`, `es-MX`, `de-DE`, `it-IT`, `ja-JP`, `zh-CN`, `zh-TW`, `ar-MA`...)
 
-### Call the API
+---
 
-#### Endpoint format
+## How to call served API
+
+### Endpoint format
 The API URL format is as follows:
 
 - `http://localhost:<port>/<bin>/<endpoint>/<field>(/<subfield>/)`
@@ -235,7 +293,7 @@ Will return this data:
 ["The Lord of the Rings: The Fellowship of the Ring"]
 ```
 
-#### Parameters
+### Parameters
 
 Parameters such as the `{endpoint path param}` (see **Dynamic path** in the [Path](bin.md#path) section of the Bin documentation) and `lang` are passed as follows:
 - `.../<field>?{endpoint path param}=<value>&lang=<lang>`
@@ -250,64 +308,17 @@ Will return:
 ["Le Seigneur des anneaux : La Communauté de l'anneau"]
 ```
 
-#### Data update while serving
+### Data update while serving
 As served data is loaded to and accessed from the bag, externally updating the nest  results in an inconsistency between the updated and the served data. To avoid this, you can nudge the Raccoon, i.e. contact the API to inform it that some data has been updated:
+
 ```bash
 curl http://localhost:8000/imdb/top250movies/_nudge
 ```
 
 Or even with parameters:
+
 ```bash
 curl http://localhost:8000/imdb/movie/_nudge?id=tt0120737
 ```
 
 The Raccoon will then reload the updated data to the bag.
-
----
-## sniff
-Reverse-matches a URL to an endpoint defined in your `/bins` directory.
-
-### Description
-
-```python
-sniff(
-  url: str,
-  dig: bool,
-  lang: str
-)
-```
-
-### Parameters
-
-| Param | Type | Allowed values      | Default | Example                    |
-|-------|------|---------------------|---------|----------------------------|
-| url   | str  | valid URL           | -       | `imdb.com/title/tt0120737` |
-| dig   | bool | `True`, `False`     | `False` | -                          |
-| lang  | str  | BCP 47 locale codes | `en-US` | `fr-FR`                    |
-
-
-#### url
-The URL you want to test against your bins.
-Schemes like `https://` or `http://`, the `www` subdomain  and the end slash `/` are optional, so these examples will return the exact samematch:
-- `https://www.imdb.com/title/tt0120737/`
-- `https://imdb.com/title/tt0120737`
-- `http://www.imdb.com/title/tt0120737/`
-- `http://imdb.com/title/tt0120737`
-- `www.imdb.com/title/tt0120737`
-
-#### dig
-In case of a match, defines if [dig()](#dig) must be performed on the matching endpoint.
-
-<u>Allowed values</u>: `True`, `False`
-- `True`: calls `dig()` and returns the result:
-```python
-{'title': ['The Lord of the Rings: The Fellowship of the Ring'], 'year': ['2001'], ... }
-```
-- `False`: returns information about the endpoint:
-```python
-{'bin': 'imdb', 'endpoint': 'movie', 'params': {'id': 'tt0340377'}}
-```
-
-#### lang (🚧WIP)
-The language the data is retrieved in.
-<u>Allowed values</u>: [BCP 47 locale codes](https://www.rfc-editor.org/info/bcp47) (e.g. `en-US` (default), `en-GB`, `fr-FR`, `fr-CA`, `es-ES`, `es-MX`, `de-DE`, `it-IT`, `ja-JP`, `zh-CN`, `zh-TW`, `ar-MA`...)
