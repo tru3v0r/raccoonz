@@ -26,9 +26,11 @@
       - [endpoint](#endpoint-1)
       - [endpoints](#endpoints)
       - [port](#port)
+    - [lang](#lang-1)
     - [Call the API](#call-the-api)
       - [Endpoint format](#endpoint-format)
       - [Parameters](#parameters-3)
+      - [Data update while serving](#data-update-while-serving)
   - [sniff](#sniff)
     - [Description](#description-3)
     - [Parameters](#parameters-4)
@@ -52,6 +54,7 @@ __init__(
 ### Parameters
 
 
+
 #### packing_mode
 The way data stored in the nest is added to the bag (the cache).
 
@@ -59,14 +62,18 @@ The way data stored in the nest is added to the bag (the cache).
 - `eager`: all the data is loaded during instantiation
 - `lazy`: data is loaded when requested, if available
 
+
 #### debug
 <u>Allowed values</u>: `True`, `False` (default)
 - `True`: enables debug mode (verbose logging, diagnostics)
 - `False`: disables debug mode
----
 
+
+
+---
 ## dig
 Returns the data from an endpoint with specific parameters.
+
 
 ### Description
 ```python
@@ -80,22 +87,28 @@ dig(
 ) --> dict|Object
 ```
 
+
 ### Parameters
+
+
 
 #### bin
 The name of the YAML file you want to use.
 
-<u>Allowed values</u>: whatever bin you have in your `src/bins/` directory.
+<u>Allowed values</u>: any bin you have in your `src/bins/` directory.
+
 
 #### endpoint
 The name of the endpoint which data you want to retrieve.
 
-<u>Allowed values:</u> whatever endpoint defined in your bin.
+<u>Allowed values:</u> any endpoint defined in your bin.
+
 
 #### refresh
 <u>Allowed values</u>: `True`, `False` (default)
 - `True`: forces a call to remote endpoint, even if data is available locally.
 - `False`: uses local data if available.
+
 
 #### lang
 The language you want to retrieve the data in.
@@ -103,12 +116,13 @@ The language you want to retrieve the data in.
 
 Note: the website might not be able to serve the data in the locale you picked.
 
+
 #### result_type
 The format you want the data to be returned in.
 
 <u>Allowed values</u>: `json` (default), `object`, `csv`
-- `json`: return a JSON string
-- `object`: return a native `Object()` object, with parameters accessible as attributes:
+- `json`: returns a JSON string
+- `object`: returns a native `Object()` object, with parameters accessible as attributes:
 ```python
 albert = Raccoon()
 movie = albert.dig("imdb", "movie", id="tt0120737", result_type="object")
@@ -120,6 +134,8 @@ This will return:
 ['The Lord of the Rings: The Fellowship of the Ring']
 ['8.9']
 ```
+- `csv`: returns a CSV string.
+
 
 #### Other parameters
 
@@ -135,36 +151,53 @@ movie = albert.dig("imdb", "movie", id="tt0120737")
 
 Allows you to serve data as an API.
 
+
 ### Description
 
 ```python
   serve(
-          bin: str,
-          bins: list,
-          endpoint: str,
-          endpoints: list,
-          lang: str,
-          port: str
+      bin: str,
+      bins: list,
+      endpoint: str,
+      endpoints: list,
+      lang: str,
+      port: str
   ):
 ```
 
 ### Parameters
 
+
+
 #### bin
 Targets a unique bin you want to serve. If no `endpoint` or `endpoints` are defined, the whole bin will be served.
+
+<u>Allowed values</u>: any bin you have in your `src/bins/` directory.
+
 
 #### bins
 Targets a list of bins you want to serve.
 
+<u>Allowed values</u>: any bin you have in your `src/bins/` directory.
+
+
 #### endpoint
-In the case of a unique `bin` passed as parameter, targets a single endpoint to serve.
+In the case of a unique `bin` passed as parameter, targets a unique endpoint from selected bin.
+
+<u>Allowed values:</u> any endpoint defined in your bin.
+
 
 #### endpoints
 In the case of a unique `bin` defined as parameter, targets a list of endpoints you want to serve within this bin.
 
+<u>Allowed values:</u> any endpoints defined in your bin.
+
 #### port
 The port on which you want to serve the API. By default, it is set as 8000.
 
+### lang
+The language you want to serve the data in.
+<u>Allowed values</u>: [BCP 47 locale codes](https://www.rfc-editor.org/info/bcp47) (e.g. `en-US` (default), `en-GB`, `fr-FR`, `fr-CA`, `es-ES`, `es-MX`, `de-DE`, `it-IT`, `ja-JP`, `zh-CN`, `zh-TW`, `ar-MA`...)
 
 ### Call the API
 
@@ -196,8 +229,20 @@ Will return:
 ["Le Seigneur des anneaux : La Communauté de l'anneau"]
 ```
 
----
+#### Data update while serving
+As served data is loaded to and accessed from the bag, externally updating the nest  results in an inconsistency between the updated and the served data. To avoid this, you can nudge the Raccoon, i.e. contact the API to inform it that some data has been updated:
+```bash
+curl http://localhost:8000/imdb/top250movies/_nudge
+```
 
+Or even with parameters:
+```bash
+curl http://localhost:8000/imdb/movie/_nudge?id=tt0120737
+```
+
+The Raccoon will then reload the updated data to the bag.
+
+---
 ## sniff
 Reverse-matches a URL to an endpoint defined in your `/bins` directory.
 
@@ -224,11 +269,13 @@ Schemes like `https://` or `http://`, the `www` subdomain  and the end slash `/`
 
 #### dig
 In case of a match, defines if [dig()](#dig) must be performed on the matching endpoint.
-- if set to `True`, `dig()` is called and and this will return the result:
+
+<u>Allowed values</u>: `True`, `False`
+- `True`: calls `dig()` and returns the result:
 ```python
 {'title': ['The Lord of the Rings: The Fellowship of the Ring'], 'year': ['2001'], ... }
 ```
-- if set to `False`, returns information about the endpoint:
+- `False`: returns information about the endpoint:
 ```python
 {'bin': 'imdb', 'endpoint': 'movie', 'params': {'id': 'tt0340377'}}
 ```
