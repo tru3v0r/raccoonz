@@ -40,6 +40,7 @@ It is first composed of different sections:
 
 It contains basic information about the bin and the author:
 
+
 ```yaml
 name: imdb
 url: "https://www.imdb.com"
@@ -50,10 +51,22 @@ version: 0.0.1
 comment: "The first raccoonz bin ever."
 ```
 
+| Key     | Type | Description   | Example                |
+|---------|------|---------------|------------------------|
+| name    | str  | bin name      | `imdb`                 |
+| url     | str  | base URL      | `https://www.imdb.com` |
+| author  | dict | author info   | `{name,website}`       |
+| version | str  | bin version   | `0.0.1`                |
+| comment | str  | optional note | `"first bin"`          |
 
 ---
 
 ## Parameters
+
+| Param   | Type | Allowed values           | Default    | 
+|---------|------|--------------------------|------------|
+| fetcher | str  | `requests`, `playwright` | `requests` |
+| parser  | str  | `bs4`                    | `bs4`      |
 
 The first section determines which modules are used for our two steps:
 - The **fetcher**: the module that retrieves the raw data (the DOM). Possible values are `requests` and `playwright`.
@@ -73,6 +86,10 @@ It is composed of two elements:
 - A path
 - Fields
 
+| Key    | Type | Allowed values                | Example        |
+|--------|------|-------------------------------|----------------|
+| path   | str  | static or `{param}` template  | `/title/{id}/` |
+| fields | dict | any string without special YAML characters   | `{title:...}`  |
 
 ### Path
 
@@ -127,6 +144,12 @@ There are two sorts of operators:
 
 ### Shape operators
 
+| Operator | Description            |
+|----------|------------------------|
+| _group   | groups data            |
+| _key     | defines key mapping    |
+| _value   | defines value mapping  |
+
 #### _group
 
 #### _key
@@ -135,6 +158,14 @@ There are two sorts of operators:
 
 
 ### Field operators
+
+| Operator | Type | Allowed values           | Default | Example        |
+|----------|------|--------------------------|---------|----------------|
+| _select  | dict | `css` selectors          | -       | `{css:[...]}`  |
+| _extract | dict | `attr: href`             | text    | `{attr:href}`  |
+| _filter  | str  | defined filters          | -       | `clean_link`   |
+| _type    | str  | `text`,`int`,`float`,`bool` | `text` | `int`          |
+
 
 #### _select
 
