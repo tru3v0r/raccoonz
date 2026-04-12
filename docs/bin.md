@@ -7,21 +7,41 @@
   - [Description](#description)
   - [Structure](#structure)
   - [Header](#header)
-  - [Parameters](#parameters)
+    - [Parameters](#parameters)
+    - [Example](#example)
+  - [Data access](#data-access)
+    - [Parameters](#parameters-1)
+    - [Example](#example-1)
   - [Endpoints](#endpoints)
+    - [Parameters](#parameters-2)
     - [Path](#path)
+      - [Static](#static)
+      - [Dynamic](#dynamic)
     - [Fields](#fields)
+      - [Example](#example-2)
   - [Operators](#operators)
     - [Shape operators](#shape-operators)
-      - [\_group](#_group)
-      - [\_key](#_key)
-      - [\_value](#_value)
+      - [Parameters](#parameters-3)
+      - [`_group`](#_group)
+        - [Example](#example-3)
+      - [`_key` and `_value`](#_key-and-_value)
+        - [Parameters](#parameters-4)
+        - [Example](#example-4)
     - [Field operators](#field-operators)
-      - [\_select](#_select)
-      - [\_extract](#_extract)
-      - [\_filter](#_filter)
-      - [\_type](#_type)
+      - [Parameters](#parameters-5)
+      - [`_select`](#_select)
+        - [Parameters](#parameters-6)
+        - [Example](#example-5)
+      - [`_extract`](#_extract)
+        - [Parameters](#parameters-7)
+        - [Example](#example-6)
+      - [`_filter`](#_filter)
+        - [Parameters](#parameters-8)
+        - [Example](#example-7)
+      - [`_type`](#_type)
+      - [Parameters](#parameters-9)
   - [Filters](#filters)
+    - [Parameters](#parameters-10)
 
 ## Description
 A bin is a YAML config file that defines how the data will be retrieved, processed, and stored.
@@ -30,16 +50,25 @@ A bin is a YAML config file that defines how the data will be retrieved, process
 ## Structure
 
 It is first composed of different sections:
-- A header
-- Parameters
-- Endpoints
-- Filters
+- A [header](#header)
+- [Data access](#data-access)
+- [Endpoints](#endpoints)
+- [Filters](#filters)
 
 
 ## Header
-
 It contains basic information about the bin and the author:
 
+### Parameters
+| Key       | Type | Description   | Example                |
+|-----------|------|---------------|------------------------|
+| `name`    | str  | bin name      | `imdb`                 |
+| `url`     | str  | base URL      | `https://www.imdb.com` |
+| `author`  | dict | author info   | `{name,website}`       |
+| `version` | str  | bin version   | `0.0.1`                |
+| `comment` | str  | optional note | `"first bin"`          |
+
+### Example
 
 ```yaml
 name: imdb
@@ -51,26 +80,22 @@ version: 0.0.1
 comment: "The first raccoonz bin ever."
 ```
 
-| Key     | Type | Description   | Example                |
-|---------|------|---------------|------------------------|
-| name    | str  | bin name      | `imdb`                 |
-| url     | str  | base URL      | `https://www.imdb.com` |
-| author  | dict | author info   | `{name,website}`       |
-| version | str  | bin version   | `0.0.1`                |
-| comment | str  | optional note | `"first bin"`          |
-
 ---
 
-## Parameters
+## Data access
+This section determines which modules are used for fetching and parsing data:
+- The **fetcher**: the module that retrieves the raw data (the DOM)
+- The **parser**: the module that processes the data.
 
-| Param   | Type | Allowed values           | Default    | 
-|---------|------|--------------------------|------------|
-| fetcher | str  | `requests`, `playwright` | `requests` |
-| parser  | str  | `bs4`                    | `bs4`      |
 
-The first section determines which modules are used for our two steps:
-- The **fetcher**: the module that retrieves the raw data (the DOM). Possible values are `requests` and `playwright`.
-- The **parser**: the module that processes the data. The only possible value so far is `bs4`.
+### Parameters
+| Param     | Type | Allowed values           | Default    | 
+|-----------|------|--------------------------|------------|
+| `fetcher` | str  | `requests`, `playwright` | `requests` |
+| `parser`  | str  | `bs4`                    | `bs4`      |
+
+
+### Example
 
 ```yaml
 fetcher: playwright
@@ -86,15 +111,24 @@ It is composed of two elements:
 - A path
 - Fields
 
-| Key    | Type | Allowed values                | Example        |
-|--------|------|-------------------------------|----------------|
-| path   | str  | static or `{param}` template  | `/title/{id}/` |
-| fields | dict | any string without special YAML characters   | `{title:...}`  |
+
+### Parameters
+
+| Key      | Type | Allowed values                | Example        |
+|----------|------|-------------------------------|----------------|
+| `path`   | str  | static or `{param}` template  | `/title/{id}/` |
+| `fields` | dict | any string without special YAML characters (`#`, `!`, `&` or `*`)   | `{title:...}`  |
+
 
 ### Path
 
 The path is the URL part that comes after the domain name. It can be of two types:
-- **Static**: points to a unique page that does not require any additional parameter, such as follows:
+- Static
+- Dynamic
+
+#### Static
+A static path points to a unique page that does not require any additional parameter, such as follows:
+
 ```yaml
 endpoints:
   top250movies:
@@ -102,18 +136,24 @@ endpoints:
 ```
 
 The endpoint is then called using this:
+
 ```python
-albert.dig("top250movies")
+albert.dig("imdb", "top250movies")
 ```
-- **Dynamic**: points to a template page that displays content based on a dynamic parameter, like an id or a slug. You can declare it using brackets `{}`:
+
+#### Dynamic
+A dynamic path points to a template page that displays content based on a dynamic parameter, like an id or a slug. You can declare it using brackets `{}`:
+
 ```yaml
 endpoints:
   movie:
     path: "/title/{id}/"
 ```
+
  The parameter `id` needs then to be passed to the method:
+
 ```python
-albert.dig("movie", id="tt0120737")
+albert.dig("imdb", "movie", id="tt0120737")
 ```
 
 
@@ -121,6 +161,10 @@ albert.dig("movie", id="tt0120737")
 
 The fields are the actual data containers of the page.
 You are free to name them however you want, as long as it does not collide with YAML special characters, like `#`, `!`, `&` or `*`. However, it is not advised to prefix them with the underscore (`_`), as this character is visually associated with operators (see below).
+
+
+#### Example
+
 ```yaml
 endpoints:
   movie:
@@ -130,46 +174,136 @@ endpoints:
       certificate: ...
       ...
 ```
+
  You can nest them as many times as your data structure requires it.
+
+---
 
 ## Operators
 
 Operators are YAML keys that perform operations on the data. By convention ,they start with the underscore `_`.
 
 There are two sorts of operators:
-
-- Shape operators: they control **how** data is structured in the final result. There are three: `_group`, `_key`, and `_value`.
-- Field operators : they compose a pipeline that controls **what** data is retrieved from the DOM. There are four: `_select`, `_extract`, `filter`, and `_type`.
+- Shape operators
+- Field operators
 
 
 ### Shape operators
+Shape operators control **how** data is structured in the final result.
 
-| Operator | Description            |
-|----------|------------------------|
-| _group   | groups data            |
-| _key     | defines key mapping    |
-| _value   | defines value mapping  |
 
-#### _group
+#### Parameters
 
-#### _key
+| Operator   | Description            | Allowed values |
+|------------|------------------------|----------------|
+| `_group`   | Groups data            | -              |
+| `_key`     | Defines key mapping    | Any string without YAML characters |
+| `_value`   | Defines value mapping  | Any string without YAML characters |
 
-#### _value
 
+#### `_group`
+
+Allows you to group different datasets in the same group.
+
+| Key       | Description | Allowed values |
+|-----------|-------------|----------------|
+| `_select` | Selector pointing to the container where input data groups are located. | See [_select](#_select) |
+| `fields`  | Fields to include in the output data group. |
+
+
+##### Example
+
+Declaring this in your bin:
+
+```yaml
+        actors:
+          _group:
+            select:
+              css:
+                - "[data-testid='title-cast'] [data-testid='title-cast-item']"
+            fields:
+              name: (...)
+              id: (...)
+              link: (...)
+              role: (...)
+```
+
+will return:
+
+```yaml
+(...)
+  actors:
+  - name: Elijah Wood
+    id: nm0000704
+    link: /name/nm0000704/
+    role: Frodo
+  - name: Ian McKellen
+    id: nm0005212
+    link: /name/nm0005212/
+    role: Gandalf
+  - (...)
+```
+
+**Note**: fields are processed normally, so you can include any [field operator](#field-operators) pipeline you want.
+
+
+#### `_key` and `_value`
+
+The `_key` and `_value` shape operators map data into key-value pairs, where, believe it or not, the value retrieved by `_key` becomes the key, and `_value` defines the associated value.
+
+
+##### Parameters
+
+| Operator   | Description            | Allowed values |
+|------------|------------------------|----------------|
+| `_key`     | Defines key mapping    | Any string without YAML characters |
+| `_value`   | Defines value mapping  | Any string without YAML characters |
+
+##### Example
+The example below:
+```yaml
+
+```
+
+will return:
+
+```yaml
+
+```
 
 ### Field operators
-
-| Operator | Type | Allowed values           | Default | Example        |
-|----------|------|--------------------------|---------|----------------|
-| _select  | dict | `css` selectors          | -       | `{css:[...]}`  |
-| _extract | dict | `attr: href`             | text    | `{attr:href}`  |
-| _filter  | str  | defined filters          | -       | `clean_link`   |
-| _type    | str  | `text`,`int`,`float`,`bool` | `text` | `int`          |
+Field operators compose a pipeline that controls **what** data is retrieved from the DOM. There are four:
+- `_select`
+- `_extract`
+- `filter`
+- `_type`
 
 
-#### _select
+#### Parameters
 
-Fields need **at least** a `_select` field operator to work with. Currently, the only supported selector type is `css`:
+| Operator   | Type | Allowed values   | Default | Example        |
+|------------|------|------------------|---------|----------------|
+| `_select`  | dict | `css`            | -       | `{css:[...]}`  |
+| `_extract` | dict | `text`, `attr`   | `text`  | `{attr:href}`  |
+| `_filter`  | str  | any filter defined in the bin [filters](#filters) section  | -       | `clean_link`   |
+| `_type`    | str  | `string`,`int`,`float`,`bool` | `string` | `_type: bool` |
+
+
+#### `_select`
+
+Fields need **at least** a `_select` field operator to work with.
+
+
+##### Parameters
+
+
+| Key    | Allowed values         | Example |
+|--------|------------------------|---------|
+| `css`  | Any valid css selector | <ul><li>`[data-testid='hero__primary-text']`</li><li>`[data-testid^='rating-histogram-bar-']`</li></ul> |
+
+
+##### Example
+
 ```yaml
     fields:
       title:
@@ -178,12 +312,27 @@ Fields need **at least** a `_select` field operator to work with. Currently, the
             - "[data-testid='hero__primary-text']"
             - "h1 span"
 ```
-The example above shows a list of two CSS selectors, so that if the first one does not return any value (which can be common as some website often change their DOM), another selection attempt is performed with the second one. You can add as many as you want.
+
+The example above shows a list of two CSS selectors, so that if the first one does not return any value (which can be common as some websites often change their DOM), another selection attempt is performed with the second one. You can add as many as you want.
 
 
-#### _extract
+#### `_extract`
+By default, the data extracted from the `_select` operator is the selected element's **inner text**. However, you can extract other types of data from this element using `_extract`.
 
-By default, the data extracted from the `_select` operator is the selected element's **inner text**. However, you can extract data from another attribute:
+##### Parameters
+
+| Operator   | Type | Allowed values   | Default | Example        |
+|------------|------|------------------|---------|----------------|
+| `_extract` | dict | `text`, `attr`   | `text`  | `{attr:href}`  |
+
+| Key      | Allowed values     |
+|----------|--------------------|
+| `text`   | -                  |
+| `attr`   | `href`             |
+
+##### Example
+Let's say you want to extract to extract the URL located in a hyperlink:
+
 ```yaml
       link:
         _select:
@@ -194,9 +343,21 @@ By default, the data extracted from the `_select` operator is the selected eleme
 ```
 This will extract the `href` attribute value from the selected `a` tag.
 
-Curently, only `attr` is supported for the `_extract` control, and its only accepted value is `href`.
 
-#### _filter
+
+#### `_filter`
+The `_filter` operator allows you to perform a deeper layer of processing on data you extracted, to filter out elements you don't need.
+
+
+
+##### Parameters
+
+| Operator   | Type | Allowed values   | Default | Example        |
+|------------|------|------------------|---------|----------------|
+| `_filter`  | str  | any filter defined in the bin [filters](#filters) section  | -       | `clean_link`   |
+
+
+##### Example
 
 Let's say the data we extracted so far is not clean enough to be stored. We can perform an additional operation to filter out elements we don't need. In the case of our link, our current output will look like this:
 
@@ -224,9 +385,16 @@ The filter, which is declared in the [Filters](#filters) section of the bin, per
 There is one more operation to complete the pipeline, data casting.
 
 
-#### _type
+#### `_type`
 
-This final stage allows to force a certain type onto the data. Let's take another example to illustrate this use case:
+This final stage allows to force a certain type onto the data.
+
+#### Parameters
+| Operator   | Type | Allowed values   | Default | Example        |
+|------------|------|------------------|---------|----------------|
+| `_type`    | str  | `string`,`int`,`float`,`bool` | `string` | `_type: bool` |
+
+Let's take another example to illustrate this use case:
 
 ```yaml
       year:
@@ -235,9 +403,8 @@ This final stage allows to force a certain type onto the data. Let's take anothe
             - "h1 + ul[role='presentation'] li:first-child"
         _type: int
 ```
-`_type` values accepted: `text` (by default), `int`, `float` and `bool`.
 
-Note: you don't need a "list" type as if more than one element is retrieved from the endpoint, it will automatically return a list of the declared `type`.
+**Note**: you don't need a "list" type as if more than one element is retrieved from the endpoint, it will automatically return a list of the declared `type`.
 
 ---
 
@@ -246,9 +413,14 @@ Note: you don't need a "list" type as if more than one element is retrieved from
 
 The last section of the bin allows to declare filters that can be called using `filter`, as seen in the [Filter](#filter) section of the Fields pipeline.
 
-Currently, only the `regex` type is supported.
 
-Note: at the moment, the default catch group is 1.
+### Parameters
+
+| Param | Description | Allowed values | Example |
+|-------|-------------|----------------|---------|
+| `regex` | Retrieves data using a regular expression. | Any valid regex | `^([^?]+)` |
+
+**Note**: at the moment, the default catch group is 1.
 
 ```yaml
 filters:
