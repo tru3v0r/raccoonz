@@ -1,7 +1,8 @@
 # Documentation
 The documentation aims at helping you understand what the **raccoonz** library concepts are, how to use it, and how to customize or create your own YAML config files ([bins](glossary.md#bin)) to retrieve and structure data from any website.
 
-Here are the pages, in a logic learning flow:
+Here are the available pages, in a logic learning flow:
+
 - [Glossary](glossary.md): what the main concepts are
 - [How it works](how-it-works.md): how the workflow is built
 - [API](api.md): how to use the `Raccoon` class methods
@@ -25,11 +26,9 @@ Here are the pages, in a logic learning flow:
   - [sniff](glossary.md#sniff)
   - [stash](glossary.md#stash)
 
----
 
 - [How it works](how-it-works.md)
 
----
 
 - [API](api.md)
   - [Table of contents](api.md#table-of-contents)
@@ -67,7 +66,6 @@ Here are the pages, in a logic learning flow:
     - [Parameters](api.md#parameters-4)
     - [Data update while serving](api.md#data-update-while-serving)
 
----
 
 - [Bin](bin.md)
   - [Description](bin.md#description)
@@ -108,3 +106,5 @@ Here are the pages, in a logic learning flow:
       - [Parameters](bin.md#parameters-9)
   - [Filters](bin.md#filters)
     - [Parameters](bin.md#parameters-10)
+
+---
