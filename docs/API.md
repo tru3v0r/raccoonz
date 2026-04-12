@@ -18,12 +18,9 @@
       - [lang](#lang)
       - [result\_type](#result_type)
       - [Other parameters](#other-parameters)
-  - [nudge](#nudge)
+  - [serve](#serve)
     - [Description](#description-2)
     - [Parameters](#parameters-2)
-  - [serve](#serve)
-    - [Description](#description-3)
-    - [Parameters](#parameters-3)
       - [bin](#bin-1)
       - [bins](#bins)
       - [endpoint](#endpoint-1)
@@ -31,10 +28,10 @@
       - [port](#port)
     - [Call the API](#call-the-api)
       - [Endpoint format](#endpoint-format)
-      - [Parameters](#parameters-4)
+      - [Parameters](#parameters-3)
   - [sniff](#sniff)
-    - [Description](#description-4)
-    - [Parameters](#parameters-5)
+    - [Description](#description-3)
+    - [Parameters](#parameters-4)
       - [url](#url)
       - [dig](#dig-1)
       - [lang (🚧WIP)](#lang-wip)
@@ -131,23 +128,6 @@ As you can see in the [Path](bin.md#path) section of the Bin documentation, endp
 albert = Raccoon()
 movie = albert.dig("imdb", "movie", id="tt0120737")
 ```
-
----
-
-## nudge
-
-### Description
-
-```python
-nudge(
-  bin: str,
-  endpoint: str,
-  lang: str
-)
-```
-
-### Parameters
-
 
 ---
 
