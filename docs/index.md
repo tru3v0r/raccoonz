@@ -2,9 +2,11 @@
 The documentation aims at helping you understand what the **raccoonz** library concepts are, how to use it, and how to customize or create your own YAML config files ([bins](glossary.md#bin)) to retrieve and structure data from any website.
 
 Here are the pages, in a logic learning flow:
-- [Glossary](glossary.md): what are the main concepts
-- [Raccoonz](api.md): how to use the `Raccoon` class API
+- [Glossary](glossary.md): what the main concepts are
+- [How it works](how-it-works.md): how the workflow is built
+- [API](api.md): how to use the `Raccoon` class methods
 - [Bin](bin.md): how to retrieve data using a bin, and how to write one
+
 
 ## Table of contents
 
@@ -24,30 +26,49 @@ Here are the pages, in a logic learning flow:
   - [stash](glossary.md#stash)
 
 ---
-- [Raccoonz](raccoonz.md)
-  - [Constructor](raccoonz.md#constructor)
-    - [Description](raccoonz.md#description)
-    - [Parameters](raccoonz.md#parameters)
-      - [bin](raccoonz.md#bin)
-      - [packing\_mode](raccoonz.md#packing_mode)
-      - [debug](raccoonz.md#debug)
-  - [dig](raccoonz.md#dig)
-    - [Description](raccoonz.md#description-1)
-    - [Parameters](raccoonz.md#parameters-1)
-      - [endpoint](raccoonz.md#endpoint)
-      - [refresh](raccoonz.md#refresh)
-      - [lang](raccoonz.md#lang)
-      - [result\_type](raccoonz.md#result_type)
-      - [Other parameters](raccoonz.md#other-parameters)
-  - [serve](raccoonz.md#serve)
-    - [Description](raccoonz.md#description-2)
-    - [Parameters](raccoonz.md#parameters-2)
-      - [endpoint](raccoonz.md#endpoint-1)
-      - [port](raccoonz.md#port)
-  - [sniff](raccoonz.md#sniff)
-    - [Description](raccoonz.md#description-3)
+
+- [How it works](how-it-works.md)
 
 ---
+
+- [API](api.md)
+  - [Table of contents](api.md#table-of-contents)
+  - [Constructor](api.md#constructor)
+    - [Description](api.md#description)
+    - [Parameters](api.md#parameters)
+      - [packing\_mode](api.md#packing_mode)
+      - [debug](api.md#debug)
+  - [sniff](api.md#sniff)
+    - [Description](api.md#description-1)
+    - [Parameters](api.md#parameters-1)
+      - [url](api.md#url)
+      - [dig](api.md#dig)
+      - [lang (🚧WIP)](api.md#lang-wip)
+  - [dig](api.md#dig-1)
+    - [Description](api.md#description-2)
+    - [Parameters](api.md#parameters-2)
+      - [bin](api.md#bin)
+      - [endpoint](api.md#endpoint)
+      - [refresh](api.md#refresh)
+      - [lang](api.md#lang)
+      - [result\_type](api.md#result_type)
+      - [Other parameters](api.md#other-parameters)
+  - [serve](api.md#serve)
+    - [Description](api.md#description-3)
+    - [Parameters](api.md#parameters-3)
+      - [bin](api.md#bin-1)
+      - [bins](api.md#bins)
+      - [endpoint](api.md#endpoint-1)
+      - [endpoints](api.md#endpoints)
+      - [port](api.md#port)
+      - [lang](api.md#lang-1)
+  - [How to call served API](api.md#how-to-call-served-api)
+    - [Endpoint format](api.md#endpoint-format)
+    - [Parameters](api.md#parameters-4)
+    - [Data update while serving](api.md#data-update-while-serving)
+
+---
+
 - [Bin](bin.md)
   - [Description](bin.md#description)
   - [Structure](bin.md#structure)
