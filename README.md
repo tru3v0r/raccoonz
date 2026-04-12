@@ -13,17 +13,17 @@ pip install raccoonz
 ```python
 from raccoonz import Raccoon
 
-albert = Raccoon("imdb")
-movie = albert.dig("movie", id="tt0120737")
+albert = Raccoon()
+movie = albert.dig("imdb", "movie", id="tt0120737")
 
 print(movie)
 ```
 This will print:
-```json
+```python
 {'title': 'The Lord of the Rings', 'year': 2001}
 ```
 
-### Serve as API (🚧WIP)
+### Serve as API
 
 ```python
 albert.serve()
@@ -60,7 +60,7 @@ endpoints:
               - "h1 + ul[role='presentation'] li:first-child"
         type: int
 ```
-For the bin full specs, please read the [bin section](docs/bin.md) of the documentation.
+For the bin full specs, please read the [Bin section](docs/bin.md) of the documentation.
 
 ---
 
@@ -71,6 +71,8 @@ raccoonz could not exist without these brilliant open-source libraries:
 - [Requests](https://pypi.org/project/requests/) (used as the "basic" fetcher)
 - [Playwright](https://pypi.org/project/playwright/) (used as the "advanced" fetcher)
 - [BeautifulSoup](https://pypi.org/project/beautifulsoup4/) (used as the default parser)
+- [FastAPI](https://pypi.org/project/fastapi/) (used to set up the API)
+- [uvicorn](https://pypi.org/project/uvicorn/) (used to run the API)
 
 ---
 
