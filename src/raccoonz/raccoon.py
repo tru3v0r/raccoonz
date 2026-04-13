@@ -244,7 +244,9 @@ class Raccoon:
             if not records:
                 raise HTTPException(status_code=404, detail="No matching records")
 
-            return self._format_records_response(records)
+            raw = request.query_params.get("raw") == "true"
+            
+            return self._format_records_response(records, raw=raw)
 
         @app.get("/{path:path}")
         def serve_path(path: str, request: Request):
@@ -281,8 +283,10 @@ class Raccoon:
             if not records:
                 raise HTTPException(status_code=404, detail="No matching records")
 
+            raw = request.query_params.get("raw") == "true"
+
             if len(parts) <= 2:
-                return self._format_records_response(records)
+                return self._format_records_response(records, raw=raw)
 
             field_path = parts[2:]
             resolved = []
@@ -702,9 +706,13 @@ class Raccoon:
     
 
 
-    def _format_records_response(self, records):
+    def _format_records_response(self, records, *, raw=False):
         if len(records) == 1:
             record = records[0]["record"]
+
+            if not raw:
+                return record.data
+            
             return {
                 "bin": records[0]["bin"],
                 "endpoint": records[0]["endpoint"],
@@ -714,6 +722,9 @@ class Raccoon:
                 "url": record.url,
                 "data": record.data,
             }
+
+        if not raw:
+            return [item["record"].data for item in records]
 
         return [
             {
