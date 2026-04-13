@@ -1,8 +1,7 @@
 # raccoonz
-raccoonz is a Python library that extracts structured data from any website using **bins** (YAML configs) and serves it as an API.
+**raccoonz** is a Python library that extracts structured data from any website using **bins** (YAML config files) and serves it as an API.
 
 ## How does it work?
-Let's take as an example a website that doesn't let us use their API anymore.
 
 ### Installation (🚧WIP)
 ```bash
@@ -10,35 +9,48 @@ pip install raccoonz
 ```
 
 ### Quick Start
+Let's take an example with a website that doesn't let us use their API anymore.
+
 ```python
 from raccoonz import Raccoon
 
 albert = Raccoon()
-movie = albert.dig("imdb", "movie", id="tt0120737")
-
-print(movie)
-```
-This will print:
-```python
-{'title': 'The Lord of the Rings', 'year': 2001}
-```
-
-### Serve as API
-
-```python
+albert.dig("imdb", "movie", id="tt0120737")
 albert.serve()
 ```
+
 Then in your CLI:
+
 ```bash
 curl "http://localhost:8000/imdb/movie?id=tt0120737"
 ```
+
 This will return the full data:
-```json
-{'title': 'The Lord of the Rings', 'year': 2001}
+
+```python
+{
+  "title": [
+    "The Lord of the Rings: The Fellowship of the Ring"
+  ],
+  "year": [
+    "2001"
+  ],
+  "certificate": [
+    "PG-13"
+  ],
+  "length": [
+    "2h 58m"
+  ],
+(...)
+}
 ```
 
-## Bins 🗑️✍️
+For more information see the [workflow](docs/how-it-works.md) page of the documentation.
+
+
+## Bins
 Bins are YAML files that contain all the information to properly retrieve data from a website. Here is a simplified example of `imdb.yaml`:
+
 ```yaml
 name: imdb
 url: "https://www.imdb.com"
@@ -60,6 +72,7 @@ endpoints:
               - "h1 + ul[role='presentation'] li:first-child"
         type: int
 ```
+
 For the bin full specs, please read the [Bin section](docs/bin.md) of the documentation.
 
 ---
@@ -67,6 +80,7 @@ For the bin full specs, please read the [Bin section](docs/bin.md) of the docume
 ## Dependencies
 
 raccoonz could not exist without these brilliant open-source libraries:
+
 - [Pyyaml](https://pypi.org/project/PyYAML/) (used to read bins)
 - [Requests](https://pypi.org/project/requests/) (used as the "basic" fetcher)
 - [Playwright](https://pypi.org/project/playwright/) (used as the "advanced" fetcher)
@@ -79,3 +93,10 @@ raccoonz could not exist without these brilliant open-source libraries:
 ## Documentation
 
 If you need any further information, please read the complete [documentation](docs/index.md).
+
+You will find a step-by-step guide that will help you dive into the library:
+
+- [Glossary](glossary.md): what the main concepts are
+- [How it works](how-it-works.md): how the workflow is built
+- [API](api.md): how to use the `Raccoon` class methods
+- [Bin](bin.md): how to retrieve data using a bin, and how to write one
