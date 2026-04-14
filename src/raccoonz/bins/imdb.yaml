@@ -151,49 +151,52 @@ endpoints:
           css:
             - "[data-testid='didyouknow-trivia'] a + div"
 
+
   full_credits:
     path: "/title/{id}/fullcredits/"
-    mode: sections_map
 
-    sections:
-      container:
-        select:
-          - "section"
-
-      name:
-        select:
-          - "h4"
-          - "h3"
-        type: text
-        transform: slug
-
-      entries:
-        container:
+    fields:
+      credits:
+        _map:
           select:
-            - "table tr"
-            - "ul li"
+            - "section"
 
-        fields:
-          person_name:
+          _key:
             select:
-              - "a[href*='/name/nm']"
-            type: text
+              - "h4"
+              - "h3"
 
-          person_id:
-            select:
-              - "a[href*='/name/nm']"
-            type: attr
-            attr: "href"
-            transform: extract_id_from_link
+          _value:
+            _group:
+              select:
+                - "table tr"
+                - "ul li"
 
-          detail:
-            select:
-              - ".credit"
-              - ".role"
-              - "td:nth-child(2)"
-            type: text
-            optional: true
+              fields:
+                name:
+                  select:
+                    - "a[href*='/name/nm']"
 
+                link:
+                  select:
+                    - "a[href*='/name/nm']"
+                  extract:
+                    attr: href
+                  filter: clean_link
+
+                id:
+                  select:
+                    - "a[href*='/name/nm']"
+                  extract:
+                    attr: href
+                  filter: extract_id_from_link
+
+                role:
+                  select:
+                    - ".credit"
+                    - ".role"
+                    - "td:nth-child(2)"
+                    
 
 filters:
 
