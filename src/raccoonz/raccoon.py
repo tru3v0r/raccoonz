@@ -424,7 +424,7 @@ class Raccoon:
         file_params = meta.get(config.NEST_FIELD_PARAMS, params)
         file_lang = meta.get(config.NEST_FIELD_LANG, lang)
 
-        raw_file = raw_dir / f"{params_key}_{timestamp}.html"
+        raw_file = raw_dir / f"{params_key}.html"
         html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8) if raw_file.exists() else None
 
         record = Record(
@@ -468,21 +468,21 @@ class Raccoon:
         raw_dir.mkdir(parents=True, exist_ok=True)
         data_dir.mkdir(parents=True, exist_ok=True)
 
+        raw_expired_dir = raw_dir / config.NEST_PATH_EXPIRED
+        data_expired_dir = data_dir / config.NEST_PATH_EXPIRED
+        raw_expired_dir.mkdir(exist_ok=True)
+        data_expired_dir.mkdir(exist_ok=True)
+
         stem = self._params_key(record.params)
 
         raw_path = raw_dir / f"{stem}.html"
         data_path = data_dir / f"{stem}.yaml"
 
-        expired_dir = data_dir / config.NEST_PATH_EXPIRED
-        expired_dir.mkdir(exist_ok=True)
-
         if data_path.exists():
-            old = data_dir / f"{stem}.yaml"
-            old.rename(expired_dir / f"{stem}_{self._timestamp()}.yaml")
+            data_path.rename(data_expired_dir / f"{stem}_{self._timestamp()}.yaml")
 
         if raw_path.exists():
-            old = raw_dir / f"{stem}.html"
-            old.rename(raw_dir / config.NEST_PATH_EXPIRED / f"{stem}_{self._timestamp()}.html")
+            raw_path.rename(raw_expired_dir / f"{stem}_{self._timestamp()}.html")
 
         if record.html is not None:
             raw_path.write_text(record.html, encoding=config.FILE_ENCODING_UTF8)
