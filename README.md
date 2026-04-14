@@ -63,14 +63,14 @@ endpoints:
     path: "/title/{id}/"
     fields:
       title:
-        select:
+        _select:
           css:
             - "[data-testid='hero__primary-text']"
       year:
-        select:
+        _select:
             css:
               - "h1 + ul[role='presentation'] li:first-child"
-        type: int
+        _type: int
 ```
 
 For the bin full specs, please read the [Bin section](docs/bin.md) of the documentation.
