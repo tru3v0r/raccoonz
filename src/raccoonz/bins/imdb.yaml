@@ -11,7 +11,7 @@ parser: bs4
 
 fetch:
   scroll_to:
-    select:
+    _select:
       css: "[data-testid='storyline-plot-summary']"
   wait_ms: 1500
 
@@ -25,27 +25,27 @@ endpoints:
 
     fields:
       title:
-        select:
+        _select:
           css:
             - "[data-testid='hero__primary-text']"
             - "h1 span"
             - "h1"
 
       year:
-        select:
+        _select:
           css:
             - "h1 + ul[role='presentation'] li:first-child"
             - "ul[role='presentation']:nth-child(2) li:first-child"
-        type: int
+        _type: int
 
       certificate:
-        select:
+        _select:
           css:
             - "h1 + ul[role='presentation'] li:nth-child(2)"
             - "ul[role='presentation']:nth-child(2) li:nth-child(2)"
 
       length:
-        select:
+        _select:
           css:
             - "[data-testid='title-techspec_runtime'] div span:nth-child(1)"
             - "h1 + ul[role='presentation'] li:nth-child(3)"
@@ -53,101 +53,101 @@ endpoints:
 
       rating:
         note:
-          select:
+          _select:
             css:
               - "[data-testid='hero-parent'] div:nth-child(3) [data-testid='hero-rating-bar__aggregate-rating__score'] span:first-child"
               - "[data-testid='rating-histogram'] div span svg+span"
-          type: float
+          _type: float
         votes:
           count:
-            select:
+            _select:
               css:
                 - "[data-testid='rating-histogram-vote-count']"
           chart:
-            select:
+            _select:
               css:
                 - "[data-testid^='rating-histogram-bar-']"
-            extract:
+            _extract:
               attr: aria-label
-            filter: vote_by_star
+            _filter: vote_by_star
         reviews:
-          select:
+          _select:
             css:
               - "[data-testid='reviews-header'] h3 span:nth-child(2)"
 
       interests:
-        select:
+        _select:
           css:
             - "[data-testid='interests'] div a"
-        type: list_text
+        _type: list_text
       
       synopsis:
-        select:
+        _select:
           css:
             - "[data-testid='plot-l']"
       
       director:
-        select:
+        _select:
           css:
             - "[data-testid='hero-parent'] section p[data-testid='plot']+div [data-testid='title-pc-list']:first-child [data-testid='title-pc-principal-credit']:first-child div li"
-        type: list_text
+        _type: list_text
       
       writers:
-        select:
+        _select:
           css:
             - "[data-testid='hero-parent'] section p[data-testid='plot']+div [data-testid='title-pc-list']:first-child [data-testid='title-pc-principal-credit']:nth-child(2) div li"
-        type: list_text
+        _type: list_text
       
       stars:
-        select:
+        _select:
           css:
             - "[data-testid='hero-parent'] section p[data-testid='plot']+div [data-testid='title-pc-list']:first-child [data-testid='title-pc-principal-credit']:nth-child(3) div li"
-        type: list_text
+        _type: list_text
 
       top_cast:
         count:
-          select:
+          _select:
             css:
               - "[data-testid='title-cast'] [data-testid='title-cast-header'] h3 span:nth-child(2)"
               - "[data-testid='title-cast'] [data-testid='title-cast-header'] h3 span.ipc-title__subtext"
-          type: text
+          _type: text
 
         actors:
           _group:
-            select:
+            _select:
               css:
                 - "[data-testid='title-cast'] [data-testid='title-cast-item']"
             fields:
               name:
-                select:
+                _select:
                   css:
                     - "a[data-testid='title-cast-item__actor']"
               id:
-                select:
+                _select:
                   css:
                     - "a[data-testid='title-cast-item__actor']"
-                extract:
+                _extract:
                   attr: href
-                filter: extract_id_from_link
+                _filter: _extract_id_from_link
               link:
-                select:
+                _select:
                   css:
                     - "a[data-testid='title-cast-item__actor']"
-                extract:
+                _extract:
                   attr: href
-                filter: clean_link
+                _filter: clean_link
               role:
-                select:
+                _select:
                   css:
                     - "ul[data-testid='cast-item-characters-list'] li"
 
       storyline:
-        select:
+        _select:
           css:
             - "[data-testid='storyline-plot-summary']"
 
       trivia:
-        select:
+        _select:
           css:
             - "[data-testid='didyouknow-trivia'] a + div"
 
@@ -158,41 +158,41 @@ endpoints:
     fields:
       credits:
         _map:
-          select:
+          _select:
             - "section"
 
           _key:
-            select:
+            _select:
               - "h4"
               - "h3"
 
           _value:
             _group:
-              select:
+              _select:
                 - "table tr"
                 - "ul li"
 
               fields:
                 name:
-                  select:
+                  _select:
                     - "a[href*='/name/nm']"
 
                 link:
-                  select:
+                  _select:
                     - "a[href*='/name/nm']"
-                  extract:
+                  _extract:
                     attr: href
-                  filter: clean_link
+                  _filter: clean_link
 
                 id:
-                  select:
+                  _select:
                     - "a[href*='/name/nm']"
-                  extract:
+                  _extract:
                     attr: href
-                  filter: extract_id_from_link
+                  _filter: _extract_id_from_link
 
                 role:
-                  select:
+                  _select:
                     - ".credit"
                     - ".role"
                     - "td:nth-child(2)"
@@ -200,7 +200,7 @@ endpoints:
 
 filters:
 
-  extract_id_from_link:
+  _extract_id_from_link:
     regex: "^(?:https://www\\.imdb\\.com)?/(?:title|name)/((?:tt|nm)\\d+)/"
 
   clean_link:
