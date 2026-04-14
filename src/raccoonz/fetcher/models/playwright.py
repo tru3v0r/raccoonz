@@ -44,7 +44,7 @@ class PlaywrightFetcher(BaseFetcher):
 
                 scroll_conf = fetch_conf.get(bin_keys.FETCH_SCROLL_TO)
                 if scroll_conf:
-                    selector = scroll_conf.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS)
+                    selector = scroll_conf.get(bin_keys.OPERATOR_SELECT, {}).get(bin_keys.OPERATOR_SELECT_CSS)
 
                     if selector:
                         loc = page.locator(selector)

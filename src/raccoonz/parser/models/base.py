@@ -52,7 +52,7 @@ class BaseParser(ABC):
             return False
 
         return any(k in value for k in (
-            bin_keys.FIELD_SELECT,
+            bin_keys.OPERATOR_SELECT,
             bin_keys.OPERATOR_GROUP,
             bin_keys.OPERATOR_MAP
         ))
@@ -63,10 +63,10 @@ class BaseParser(ABC):
             return False
 
         config_keys = {
-            bin_keys.FIELD_SELECT,
-            bin_keys.FIELD_EXTRACT,
-            bin_keys.FIELD_FILTER,
-            bin_keys.FIELD_TYPE,
+            bin_keys.OPERATOR_SELECT,
+            bin_keys.OPERATOR_EXTRACT,
+            bin_keys.OPERATOR_FILTER,
+            bin_keys.OPERATOR_TYPE,
             bin_keys.OPERATOR_GROUP,
         }
 

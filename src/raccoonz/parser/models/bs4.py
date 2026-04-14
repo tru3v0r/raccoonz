@@ -51,7 +51,7 @@ class BS4Parser(BaseParser):
     def _parse_map(self, soup, key, value, errors):
         map_conf = value[bin_keys.OPERATOR_MAP]
 
-        item_selectors = map_conf.get(bin_keys.FIELD_SELECT, [])
+        item_selectors = map_conf.get(bin_keys.OPERATOR_SELECT, [])
         key_conf = map_conf.get(bin_keys.OPERATOR_KEY)
         value_conf = map_conf.get(bin_keys.OPERATOR_VALUE)
 
@@ -115,7 +115,7 @@ class BS4Parser(BaseParser):
     #pipeline
 
     def _select(self, soup, key, value, errors):
-        selectors = value.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS, [])
+        selectors = value.get(bin_keys.OPERATOR_SELECT, {}).get(bin_keys.OPERATOR_SELECT_CSS, [])
 
         for selector in selectors:
             print(f"selector: {selector}")
@@ -138,9 +138,9 @@ class BS4Parser(BaseParser):
 
 
     def _extract(self, elements, value):
-        extract = value.get(bin_keys.FIELD_EXTRACT, bin_keys.FIELD_EXTRACT_INNER_TEXT)
+        extract = value.get(bin_keys.OPERATOR_EXTRACT, bin_keys.OPERATOR_EXTRACT_INNER_TEXT)
 
-        if extract == bin_keys.FIELD_EXTRACT_INNER_TEXT:
+        if extract == bin_keys.OPERATOR_EXTRACT_INNER_TEXT:
             values = [e.get_text(strip=True) for e in elements]
 
         elif isinstance(extract, dict) and "attr" in extract:
@@ -158,7 +158,7 @@ class BS4Parser(BaseParser):
     def _filter(self, values, value):
         print(f"entered _filter")
         print(f"value: {value}")
-        filter_name = value.get(bin_keys.FIELD_FILTER)
+        filter_name = value.get(bin_keys.OPERATOR_FILTER)
 
         print("filter_name")
         print(filter_name)
@@ -170,7 +170,7 @@ class BS4Parser(BaseParser):
         if not filter_conf:
             return values
 
-        pattern = filter_conf.get(bin_keys.FIELD_FILTER_REGEX)
+        pattern = filter_conf.get(bin_keys.OPERATOR_FILTER_REGEX)
         if not pattern:
             return values
 
@@ -192,7 +192,7 @@ class BS4Parser(BaseParser):
     def _parse_each(self, soup, key, value, errors):
         each_conf = value[bin_keys.OPERATOR_GROUP]
 
-        item_selectors = each_conf.get(bin_keys.FIELD_SELECT, {}).get(bin_keys.FIELD_SELECT_CSS, [])
+        item_selectors = each_conf.get(bin_keys.OPERATOR_SELECT, {}).get(bin_keys.OPERATOR_SELECT_CSS, [])
         item_fields = each_conf.get(bin_keys.FIELDS, {})
 
         items = None
