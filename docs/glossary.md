@@ -10,7 +10,10 @@ The **raccoonz** library borrows from the semantic field of this sneaky, yet bel
   - [dig](#dig)
   - [endpoint](#endpoint)
   - [fetcher](#fetcher)
+  - [group](#group)
   - [hoard](#hoard)
+  - [key](#key)
+  - [map](#map)
   - [nest](#nest)
   - [nudge](#nudge)
   - [pack](#pack)
@@ -18,6 +21,7 @@ The **raccoonz** library borrows from the semantic field of this sneaky, yet bel
   - [serve](#serve)
   - [sniff](#sniff)
   - [stash](#stash)
+  - [value](#value)
 
 
 ## bag
@@ -52,8 +56,26 @@ The fetcher is the tool defined in a [bin](#bin) used to retrieve raw data (DOM)
 See the [Data access](bin.md#data-access) section of the [bin documentation](bin.md).
 
 
+## group
+`_group` is a [shape operator](bin.md#shape-operators) that, once declared in your [bin](bin.md), allows datasets to form lists.
+
+See: [`_group`](bin.md#_group)
+
+
 ## hoard
 `_hoard()` is the `Raccoon` class helper method that writes freshly-retrieved data into the [nest](#nest).
+
+
+## key
+`_key` is a [shape operator](bin.md#shape-operators) that, once declared with a `_value` inside a `_map`, allows to form key-value pairings in your bin's output data.
+
+See: [`_map`](bin.md#_map)
+
+
+## map
+`_map` is a [shape operator](bin.md#shape-operators) that allows to form key-value pairings in your bin's output data.
+
+See: [`_map`](bin.md#_map)
 
 
 ## nest
@@ -101,7 +123,12 @@ See the [sniff()](API.md#sniff) section of the `Raccoon` [API documentation](API
 
 
 ## stash
-
 Stashing is the action of filling the [bag](#bag) with freshly [dug](#dig) data, i.e. adding this data to the cache.
 
 `_stash()` is the `Raccoon` class helper method that performs this action.
+
+
+## value
+`_value` is a [shape operator](bin.md#shape-operators) that, once declared with a `_key` inside a `_map`, allows to form key-value pairings in your bin's output data.
+
+See: [`_map`](bin.md#_map)

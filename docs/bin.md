@@ -24,7 +24,7 @@
       - [Parameters](#parameters-3)
       - [`_group`](#_group)
         - [Example](#example-3)
-      - [`_key` and `_value`](#_key-and-_value)
+      - [`_map`](#_map)
         - [Parameters](#parameters-4)
         - [Example](#example-4)
     - [Field operators](#field-operators)
@@ -248,15 +248,16 @@ will return:
 **Note**: fields are processed normally, so you can include any [field operator](#field-operators) pipeline you want.
 
 
-#### `_key` and `_value`
+#### `_map`
 
-The `_key` and `_value` shape operators map data into key-value pairs, where, believe it or not, the value retrieved by `_key` becomes the key, and `_value` defines the associated value.
+The `_map` shape operator maps data into key-value pairs, where `_select` points at the container where keys and values are located, then the value retrieved by `_key` becomes the key, and `_value` defines the associated value.
 
 
 ##### Parameters
 
 | Operator   | Description            | Allowed values |
 |------------|------------------------|----------------|
+| `_select`     | Selector pointing to the container where keys and values are located. | See [_select](#_select) |
 | `_key`     | Defines key mapping    | Any string without YAML characters |
 | `_value`   | Defines value mapping  | Any string without YAML characters |
 
