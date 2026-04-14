@@ -17,9 +17,9 @@ ENDPOINT_PATH = "path"
 ENDPOINT_WAIT_SELECTOR = "wait_selector"
 
 
-CONTROL_FIELD_GROUP = "_group"
-CONTROL_FIELD_KEY = "_key"
-CONTROL_FIELD_VALUE = "_value"
+OPERATOR_GROUP = "_group"
+OPERATOR_KEY = "_key"
+OPERATOR_VALUE = "_value"
 
 
 FIELDS = "fields"
