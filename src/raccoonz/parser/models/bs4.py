@@ -21,13 +21,13 @@ class BS4Parser(BaseParser):
         errors = []
 
         def parse_leaf(key, value):
-            if isinstance(value, dict) and bin_keys.CONTROL_FIELD_GROUP in value:
+            if isinstance(value, dict) and bin_keys.OPERATOR_GROUP in value:
                 current = self._parse_each(soup, key, value, errors)
                 if current is None:
                     errors.append(f"Missing field: {key}")
                 return current
 
-            if isinstance(value, dict) and bin_keys.CONTROL_FIELD_MAP in value:
+            if isinstance(value, dict) and bin_keys.OPERATOR_MAP in value:
                 current = self._parse_map(soup, key, value, errors)
                 if current is None:
                     errors.append(f"Missing field: {key}")
@@ -47,6 +47,12 @@ class BS4Parser(BaseParser):
                     return None
 
             return current
+        
+        result = self._walk(fields, parse_leaf)
+        result[config.RESULT_ERRORS] = errors
+        return result
+
+
 
     def _parse_map(self, soup, key, value, errors):
         map_conf = value[bin_keys.OPERATOR_MAP]
@@ -96,7 +102,7 @@ class BS4Parser(BaseParser):
             if not map_key:
                 continue
 
-            if isinstance(value_conf, dict) and bin_keys.CONTROL_FIELD_GROUP in value_conf:
+            if isinstance(value_conf, dict) and bin_keys.OPERATOR_GROUP in value_conf:
                 map_value = self._parse_each(item, f"{key}.{map_key}", value_conf, errors)
             else:
                 map_value = self._select(item, f"{key}.{map_key}", value_conf, errors)
