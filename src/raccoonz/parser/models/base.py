@@ -48,13 +48,14 @@ class BaseParser(ABC):
 
 
     def _is_leaf(self, value):
-        return (
-            isinstance(value, dict)
-            and (
-                bin_keys.FIELD_SELECT in value
-                or bin_keys.OPERATOR_GROUP in value
-            )
-        )
+        if not isinstance(value, dict):
+            return False
+
+        return any(k in value for k in (
+            bin_keys.FIELD_SELECT,
+            bin_keys.OPERATOR_GROUP,
+            bin_keys.OPERATOR_MAP
+        ))
 
 
     def _is_branch(self, value):

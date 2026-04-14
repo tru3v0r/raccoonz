@@ -18,6 +18,7 @@ ENDPOINT_WAIT_SELECTOR = "wait_selector"
 
 
 OPERATOR_GROUP = "_group"
+OPERATOR_MAP = "_map"
 OPERATOR_KEY = "_key"
 OPERATOR_VALUE = "_value"
 

@@ -21,8 +21,14 @@ class BS4Parser(BaseParser):
         errors = []
 
         def parse_leaf(key, value):
-            if isinstance(value, dict) and bin_keys.OPERATOR_GROUP in value:
+            if isinstance(value, dict) and bin_keys.CONTROL_FIELD_GROUP in value:
                 current = self._parse_each(soup, key, value, errors)
+                if current is None:
+                    errors.append(f"Missing field: {key}")
+                return current
+
+            if isinstance(value, dict) and bin_keys.CONTROL_FIELD_MAP in value:
+                current = self._parse_map(soup, key, value, errors)
                 if current is None:
                     errors.append(f"Missing field: {key}")
                 return current
@@ -42,10 +48,68 @@ class BS4Parser(BaseParser):
 
             return current
 
-        result = self._walk(fields, parse_leaf)
-        result[config.RESULT_ERRORS] = errors
-        return result
-    
+    def _parse_map(self, soup, key, value, errors):
+        map_conf = value[bin_keys.OPERATOR_MAP]
+
+        item_selectors = map_conf.get(bin_keys.FIELD_SELECT, [])
+        key_conf = map_conf.get(bin_keys.OPERATOR_KEY)
+        value_conf = map_conf.get(bin_keys.OPERATOR_VALUE)
+
+        if not item_selectors:
+            errors.append(f"Missing map selectors for field: {key}")
+            return None
+
+        if not key_conf or not value_conf:
+            errors.append(f"Incomplete _map config for field: {key}")
+            return None
+
+        items = None
+        for selector in item_selectors:
+            if not selector:
+                continue
+            try:
+                elements = soup.select(selector)
+            except Exception:
+                errors.append(f"Invalid selector for field '{key}': {selector}")
+                continue
+            if elements:
+                items = elements
+                break
+
+        if not items:
+            return None
+
+        result = {}
+
+        for item in items:
+            current_key = self._select(item, f"{key}._key", key_conf, errors)
+            if not current_key:
+                continue
+
+            current_key = self._extract(current_key, key_conf)
+            current_key = self._filter(current_key, key_conf)
+
+            if not current_key:
+                continue
+
+            map_key = current_key[0] if isinstance(current_key, list) else current_key
+            if not map_key:
+                continue
+
+            if isinstance(value_conf, dict) and bin_keys.CONTROL_FIELD_GROUP in value_conf:
+                map_value = self._parse_each(item, f"{key}.{map_key}", value_conf, errors)
+            else:
+                map_value = self._select(item, f"{key}.{map_key}", value_conf, errors)
+                if map_value:
+                    map_value = self._extract(map_value, value_conf)
+                    map_value = self._filter(map_value, value_conf)
+                else:
+                    map_value = None
+
+            result[map_key] = map_value
+
+        return result or None
+
 
 
     #pipeline
