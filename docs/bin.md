@@ -39,7 +39,8 @@
         - [Parameters](#parameters-8)
         - [Example](#example-7)
       - [`_type`](#_type)
-      - [Parameters](#parameters-9)
+        - [Parameters](#parameters-9)
+        - [Example](#example-8)
   - [Filters](#filters)
     - [Parameters](#parameters-10)
 
@@ -389,11 +390,12 @@ There is one more operation to complete the pipeline, data casting.
 
 This final stage allows to force a certain type onto the data.
 
-#### Parameters
+##### Parameters
 | Operator   | Type | Allowed values   | Default | Example        |
 |------------|------|------------------|---------|----------------|
 | `_type`    | str  | `string`,`int`,`float`,`bool` | `string` | `_type: bool` |
 
+##### Example
 Let's take another example to illustrate this use case:
 
 ```yaml
