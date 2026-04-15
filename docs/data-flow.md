@@ -2,7 +2,7 @@
 This page aims to explain how data is handled by the Raccoon class.
 
 
-You might want to read the [glossary](glossary.md) first to get some concepts explained here.
+You might want to read the [glossary](glossary.md) and the [API](api.md) docs to get some concepts explained here.
 
 
 
