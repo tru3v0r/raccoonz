@@ -96,8 +96,8 @@ If you need any further information, please read the complete [documentation](do
 
 You will find a step-by-step guide that will help you dive into the library:
 
-- [Glossary](glossary.md): what the main concepts are
-- [How it works](how-it-works.md): how the workflow is built
-- [Data flow](data-flow.md): how data is stored and loaded in the library
-- [API](api.md): how to use the `Raccoon` class methods
-- [Bin](bin.md): how to retrieve data using a bin, and how to write one
+- [Glossary](docs/glossary.md): what the main concepts are
+- [How it works](docs/how-it-works.md): how the workflow is built
+- [Data flow](docs/data-flow.md): how data is stored and loaded in the library
+- [API](docs/api.md): how to use the `Raccoon` class methods
+- [Bin](docs/bin.md): how to retrieve data using a bin, and how to write one
