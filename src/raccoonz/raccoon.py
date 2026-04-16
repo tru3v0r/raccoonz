@@ -1,9 +1,9 @@
 from pathlib import Path
-from datetime import datetime
 import yaml
 import hashlib
 import re
 
+from .storage.filesystem import FileSystemStorage
 from .constants import config
 from .constants import bin_keys
 from .errors import BinNotFoundError, URLKeyError, EndpointNotFoundError, BinKeyError
@@ -28,12 +28,13 @@ class Raccoon:
         self.bag = {}
         self.nest_root = Path(config.NEST_PATH)
         self.fully_packed = False
-
+        self.storage = FileSystemStorage(self.nest_root)
         self.debug = debug
 
         self.packing_mode = packing_mode
         if packing_mode == config.PACKING_MODE_EAGER:
-            self._pack()
+            self.storage.pack(self.bag)
+            self.fully_packed = True
 
 
 
@@ -107,10 +108,10 @@ class Raccoon:
                 got=list(params.keys())
             )
         
-        params_key = self._record_key(params, lang)
+        params_key = self.storage._record_key(params, lang)
 
         if self.packing_mode == config.PACKING_MODE_LAZY and not refresh:
-            self._pack_one(bin, endpoint, lang=lang, **params)
+            self.storage.pack_one(self.bag, bin, endpoint, lang=lang, **params)
         
         cached = self.bag.get(bin, {}).get(endpoint, {}).get(params_key)
         if not refresh and cached and cached.data is not None:
@@ -131,7 +132,7 @@ class Raccoon:
             html,
             ep.get(bin_keys.FIELDS))
         
-        timestamp = self._timestamp()
+        timestamp = self.storage._timestamp()
 
         record = Record(
             params,
@@ -143,7 +144,13 @@ class Raccoon:
         )
 
         self._stash(bin, endpoint, record)
-        self._hoard(bin, endpoint, record)
+        self.storage.hoard(
+            bin,
+            endpoint,
+            record,
+            bin_version=self.bins[bin][config.BIN_CONFIG].get(config.NEST_FIELD_VERSION),
+            bin_hash=self._bin_hash(bin)
+        )
         
         # return object
         if result_type == config.RESULT_TYPE_OBJECT:
@@ -215,7 +222,7 @@ class Raccoon:
         from fastapi import FastAPI, HTTPException, Request
         import uvicorn
 
-        self._pack()
+        self.storage.pack(self.bag)
 
         app = FastAPI()
 
@@ -323,132 +330,11 @@ class Raccoon:
 
 
 
-    # load everything from nest to bag (eager)
-    def _pack(self):
-
-        self.bag = {}
-
-        if not self.nest_root.exists():
-            return
-
-        for bin_dir in self.nest_root.iterdir():
-            if not bin_dir.is_dir():
-                continue
-
-            bin = bin_dir.name
-
-            for lang_dir in bin_dir.iterdir():
-                if not lang_dir.is_dir():
-                    continue
-
-                lang = lang_dir.name
-
-                for endpoint_dir in lang_dir.iterdir():
-                    if not endpoint_dir.is_dir():
-                        continue
-
-                    endpoint = endpoint_dir.name
-                    data_dir = endpoint_dir / config.NEST_PATH_DATA
-                    raw_dir = endpoint_dir / config.NEST_PATH_RAW
-
-                    if not data_dir.exists():
-                        continue
-
-                    for data_file in data_dir.glob("*.yaml"):
-                        if data_file.parent.name == "_expired":
-                            continue
-
-                        with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
-                            payload = yaml.safe_load(f) or {}
-
-                        meta = payload.get(config.NEST_FIELD_META, {})
-                        data = payload.get(config.NEST_FIELD_DATA)
-
-                        params = meta.get(config.NEST_FIELD_PARAMS, {})
-                        timestamp = meta.get(config.NEST_FIELD_TIMESTAMP)
-                        url = meta.get(config.NEST_FIELD_URL)
-                        file_lang = meta.get(config.NEST_FIELD_LANG, lang)
-
-                        params_key = self._params_key(params)
-                        raw_file = raw_dir / f"{params_key}.html"
-                        html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8) if raw_file.exists() else None
-
-                        record = Record(
-                            params=params,
-                            url=url,
-                            html=html,
-                            data=data,
-                            timestamp=timestamp,
-                            lang=file_lang,
-                        )
-
-                        if bin not in self.bag:
-                            self.bag[bin] = {}
-
-                        if endpoint not in self.bag[bin]:
-                            self.bag[bin][endpoint] = {}
-
-                        self.bag[bin][endpoint][self._record_key(params, file_lang)] = record
-
-        self.fully_packed = True
-
-
-    # load latest endpoint from nest to bag (lazy)
-    def _pack_one(self, bin, endpoint, *, lang, **params):
-        record_key = self._record_key(params, lang)
-
-        if bin in self.bag and endpoint in self.bag[bin] and record_key in self.bag[bin][endpoint]:
-            return
-
-        raw_dir = self._raw_dir_endpoint(bin, lang, endpoint)
-        data_dir = self._data_dir_endpoint(bin, lang, endpoint)
-
-        params_key = self._params_key(params)
-        pattern = f"{params_key}.yaml"
-
-        if not data_dir.exists():
-            return
-
-        data_files = [p for p in data_dir.glob(pattern) if p.is_file()]
-        if not data_files:
-            return
-
-        data_file = data_files[0]
-        with data_file.open("r", encoding=config.FILE_ENCODING_UTF8) as f:
-            payload = yaml.safe_load(f) or {}
-
-        meta = payload.get(config.NEST_FIELD_META, {})
-        data = payload.get(config.NEST_FIELD_DATA)
-        timestamp = meta.get(config.NEST_FIELD_TIMESTAMP)
-        url = meta.get(config.NEST_FIELD_URL)
-        file_params = meta.get(config.NEST_FIELD_PARAMS, params)
-        file_lang = meta.get(config.NEST_FIELD_LANG, lang)
-
-        raw_file = raw_dir / f"{params_key}.html"
-        html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8) if raw_file.exists() else None
-
-        record = Record(
-            params=file_params,
-            url=url,
-            html=html,
-            data=data,
-            timestamp=timestamp,
-            lang=file_lang,
-        )
-
-        if bin not in self.bag:
-            self.bag[bin] = {}
-
-        if endpoint not in self.bag[bin]:
-            self.bag[bin][endpoint] = {}
-
-        self.bag[bin][endpoint][record_key] = record
-
 
 
     # write to bag
     def _stash(self, bin, endpoint, record):
-        record_key = self._record_key(record.params, record.lang)
+        record_key = self.storage._record_key(record.params, record.lang)
 
         if bin not in self.bag:
             self.bag[bin] = {}
@@ -460,114 +346,9 @@ class Raccoon:
 
 
 
-    # write to nest
-    def _hoard(self, bin, endpoint, record):
-        raw_dir = self._raw_dir_endpoint(bin, record.lang, endpoint)
-        data_dir = self._data_dir_endpoint(bin, record.lang, endpoint)
-
-        raw_dir.mkdir(parents=True, exist_ok=True)
-        data_dir.mkdir(parents=True, exist_ok=True)
-
-        raw_expired_dir = raw_dir / config.NEST_PATH_EXPIRED
-        data_expired_dir = data_dir / config.NEST_PATH_EXPIRED
-        raw_expired_dir.mkdir(exist_ok=True)
-        data_expired_dir.mkdir(exist_ok=True)
-
-        stem = self._params_key(record.params)
-
-        raw_path = raw_dir / f"{stem}.html"
-        data_path = data_dir / f"{stem}.yaml"
-
-        if data_path.exists():
-            data_path.rename(data_expired_dir / f"{stem}_{self._timestamp()}.yaml")
-
-        if raw_path.exists():
-            raw_path.rename(raw_expired_dir / f"{stem}_{self._timestamp()}.html")
-
-        if record.html is not None:
-            raw_path.write_text(record.html, encoding=config.FILE_ENCODING_UTF8)
-
-        payload = {
-            config.NEST_FIELD_META: {
-                config.NEST_FIELD_BIN: bin,
-                config.NEST_FIELD_VERSION: self.bins[bin][config.BIN_CONFIG].get(config.NEST_FIELD_VERSION),
-                config.NEST_FIELD_HASH: self._bin_hash(bin),
-                config.NEST_FIELD_ENDPOINT: endpoint,
-                config.NEST_FIELD_LANG: record.lang,
-                config.NEST_FIELD_PARAMS: record.params,
-                config.NEST_FIELD_TIMESTAMP: record.timestamp,
-                config.NEST_FIELD_URL: record.url,
-            },
-            config.NEST_FIELD_DATA: record.data,
-        }
-
-        with data_path.open("w", encoding=config.FILE_ENCODING_UTF8) as f:
-            yaml.safe_dump(payload, f, allow_unicode=True, sort_keys=False)
-
-
 
 
     # helpers
-
-
-    def _bin_dir(self, bin):
-        return self.nest_root / bin
-
-
-
-    def _lang_dir(self, bin, lang):
-        return self._bin_dir(bin) / self._safe_path_part(lang)
-
-
-
-    def _endpoint_dir(self, bin, lang, endpoint):
-        return self._lang_dir(bin, lang) / endpoint
-
-
-
-    def _raw_dir_endpoint(self, bin, lang, endpoint):
-        return self._endpoint_dir(bin, lang, endpoint) / config.NEST_PATH_RAW
-
-
-
-    def _data_dir_endpoint(self, bin, lang, endpoint):
-        return self._endpoint_dir(bin, lang, endpoint) / config.NEST_PATH_DATA
-
-
-
-    def _record_key(self, params, lang):
-        return f"{self._safe_path_part(lang)}::{self._params_key(params)}"
-
-
-
-    def _params_key(self, params):
-        if not params:
-            return "_"
-
-        parts = []
-        for key in sorted(params):
-            safe_key = self._safe_path_part(key)
-            safe_value = self._safe_path_part(params[key])
-            parts.append(f"{safe_key}={safe_value}")
-
-        return ",".join(parts)
-
-
-
-    def _record_stem(self, params):
-        return f"{self._params_key(params)}"
-
-
-
-    def _safe_path_part(self, value):
-        forbidden = '<>:"/\\|?*'
-        result = str(value)
-
-        for char in forbidden:
-            result = result.replace(char, "_")
-
-        return result.strip() or "_"
-
 
 
     def _latest_file(self, directory: Path, pattern: str):
@@ -587,9 +368,6 @@ class Raccoon:
 
 
 
-    def _timestamp(self):
-        return datetime.now().strftime("%Y%m%d_%H%M%S")
-    
 
 
     # sniff helpers
@@ -834,4 +612,4 @@ class Raccoon:
             if not self.bag[bin]:
                 self.bag.pop(bin, None)
 
-        self._pack_one(bin, endpoint, lang=lang, **params)
+        self.storage.pack_one(self.bag, bin, endpoint, lang=lang, **params)
