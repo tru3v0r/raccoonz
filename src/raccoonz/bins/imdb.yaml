@@ -159,7 +159,8 @@ endpoints:
       credits:
         _map:
           _select:
-            - "section"
+            css:
+              - "section"
 
           _key:
             _select:
