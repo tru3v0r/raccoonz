@@ -80,7 +80,7 @@ class FileSystemStorage:
             data_file,
             raw_dir,
             default_lang=lang,
-            default_params={}
+            default_params=params
         )
 
         self._store_record(bag, bin_name, endpoint, record)
