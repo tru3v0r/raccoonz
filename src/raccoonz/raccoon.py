@@ -1,15 +1,13 @@
 from pathlib import Path
-import yaml
-import hashlib
-import re
 
 from .constants import config
 from .constants import bin_keys
+from .config.bin_loader import BinLoader
 from .storage.filesystem import FileSystemStorage
 from .storage.bag import Bag
 from .sniff.sniffer import Sniffer
 from .serve.server import Server
-from .errors import BinNotFoundError, URLKeyError, EndpointNotFoundError, BinKeyError
+from .errors import URLKeyError, EndpointNotFoundError, BinKeyError
 from .fetcher.factory import build_fetcher
 from .parser.factory import build_parser
 from .record import Record
@@ -26,9 +24,10 @@ class Raccoon:
     ):
 
         self.bins = {}
+        self.bin_loader = BinLoader()
         self.sniffer = Sniffer(
-            load_bin=self._load_bin,
-            list_bins=self._list_bins,
+            load_bin=self.bin_loader.load,
+            list_bins=self.bin_loader.list,
             dig=self.dig,
         )
         self.fetchers = {}
@@ -52,128 +51,44 @@ class Raccoon:
         if packing_mode == config.PACKING_MODE_EAGER:
             self.storage.pack(self.bag.content)
             self.fully_packed = True
-
-
-
-    def _load_bin(self, bin) ->dict:
-        bin_path = Path(config.BINS_PATH) / f"{bin}.yaml"
-
-        if not bin_path.exists():
-            raise BinNotFoundError(bin=bin)
         
-        content = bin_path.read_text(encoding=config.FILE_ENCODING_UTF8)
-        data = yaml.safe_load(content) or {}
-
-        hash = hashlib.sha256(content.encode()).hexdigest()
-
-        return { config.BIN_CONFIG: data, config.BIN_HASH: hash }
-        
-
 
     def dig(
-            self, 
-            bin: str,
-            endpoint: str, 
-            *,
-            refresh=False, 
-            result_type=config.RESULT_TYPE_DICT,
-            lang=config.PLAYWRIGHT_CONTEXT_LOCALE,
-            **params
+        self,
+        bin: str,
+        endpoint: str,
+        *,
+        refresh=False,
+        result_type=config.RESULT_TYPE_DICT,
+        lang=config.PLAYWRIGHT_CONTEXT_LOCALE,
+        **params
     ):
-        
-        bin_data = self._load_bin(bin)
-        self.bins[bin] = bin_data
+        bin_data = self._load_bin_data(bin)
+        fetcher, parser = self._get_runtime(bin_data)
+        endpoint_data = self._get_endpoint(bin_data, endpoint)
+        url = self._build_url(bin, bin_data, endpoint_data, endpoint, params)
 
-        default_fetcher = config.DEFAULT_FETCHER
-        default_parser = config.DEFAULT_PARSER
-
-        bin_config = bin_data[config.BIN_CONFIG]
-
-        bin_fetcher = bin_config.get(bin_keys.FETCHER, default_fetcher)
-        if bin_fetcher not in self.fetchers:
-            self.fetchers[bin_fetcher] = build_fetcher(bin_fetcher)
-
-        bin_parser = bin_config.get(bin_keys.PARSER, default_parser)
-        if bin_parser not in self.parsers:
-            self.parsers[bin_parser] = build_parser(bin_parser, config=bin_config)
-
-        endpoints = bin_config.get(bin_keys.ENDPOINTS, {})
-
-        if endpoint not in endpoints:
-            raise EndpointNotFoundError(endpoint)
-        
-        ep = endpoints[endpoint]
-
-        base_url = bin_config.get(bin_keys.URL)
-        path = ep.get(bin_keys.ENDPOINT_PATH)
-
-        if not base_url:
-            raise BinKeyError(bin, bin_keys.URL)
-        
-        if not path:
-            raise BinKeyError(bin, bin_keys.ENDPOINT_PATH)
-        
-        try:
-            url = f"{base_url.rstrip('/')}/{path.lstrip('/')}".format(**params)
-        except KeyError as e:
-            missing = e.args[0]
-            expected = [p.strip("{}") for p in path.split("/") if "{" in p]
-            raise URLKeyError(
-                missing,
-                endpoint,
-                expected=expected,
-                got=list(params.keys())
-            )
-        
-        if self.packing_mode == config.PACKING_MODE_LAZY and not refresh:
-            self.storage.pack_one(self.bag.content, bin, endpoint, lang=lang, **params)
-        
-        cached = self.bag.get(bin, endpoint, params=params, lang=lang)
-        if not refresh and cached and cached.data is not None:
-            return cached.data
-        
-        wait_selector = bin_config.get(bin_keys.ENDPOINT_WAIT_SELECTOR)
-        
-        fetch_conf = bin_config.get(bin_keys.FETCH)
-
-        html = self.fetchers[bin_fetcher].fetch(
-            url,
-            wait_selector=wait_selector,
-            fetch_conf=fetch_conf,
-            lang=lang
-        )
-
-        result = self.parsers[bin_parser].parse(
-            html,
-            ep.get(bin_keys.FIELDS))
-        
-        timestamp = self.storage._timestamp()
-
-        record = Record(
-            params,
-            url,
-            html,
-            result,
-            timestamp,
-            lang=lang
-        )
-
-        self.bag.stash(bin, endpoint, record)
-        self.storage.hoard(
+        cached = self._load_cached_record(
             bin,
             endpoint,
-            record,
-            bin_version=self.bins[bin][config.BIN_CONFIG].get(config.NEST_FIELD_VERSION),
-            bin_hash=self._bin_hash(bin)
+            lang=lang,
+            refresh=refresh,
+            params=params,
         )
-        
-        # return object
+        if cached is not None:
+            result = cached.data
+        else:
+            html = self._fetch_html(fetcher, url, bin_data, lang)
+            result = self._parse_result(parser, html, endpoint_data)
+            record = self._build_record(params, url, html, result, lang=lang)
+            self._persist_record(bin, endpoint, bin_data, record)
+
         if result_type == config.RESULT_TYPE_OBJECT:
             from .object import Object
-            result = Object(result)
+            return Object(result)
 
         return result
-    
+
 
     def sniff(self, url: str, *, dig=False, lang=config.PLAYWRIGHT_CONTEXT_LOCALE):
         return self.sniffer.sniff(url, dig=dig, lang=lang)
@@ -204,40 +119,6 @@ class Raccoon:
 
 
 
-
-
-
-
-
-
-
-    # helpers
-
-
-    def _latest_file(self, directory: Path, pattern: str):
-        if not directory.exists():
-            return None
-
-        files = [p for p in directory.glob(pattern) if p.is_file()]
-        if not files:
-            return None
-
-        return max(files, key=lambda p: p.stem)
-
-
-
-    def _bin_hash(self, bin):
-        return self.bins[bin][config.BIN_HASH]
-
-
-
-
-    def _list_bins(self):
-        bins_path = Path(config.BINS_PATH)
-        return [p.stem for p in bins_path.glob("*.yaml")]
-
-
-
     #serve helpers
 
     def _merge_filters(self, single, multiple):
@@ -252,21 +133,11 @@ class Raccoon:
         return values or None
 
 
-
     def _clean_query_params(self, query_params):
         query_params = dict(query_params)
         query_params.pop("lang", None)
         return query_params
     
-
-
-
-    
-
-
-
-    
-
 
     def _format_records_response(self, records, *, raw=False):
         if len(records) == 1:
@@ -365,3 +236,103 @@ class Raccoon:
     def _reload_one(self, bin, endpoint, *, lang, **params):
         self.bag.delete_endpoint(bin, endpoint)
         self.storage.pack_one(self.bag.content, bin, endpoint, lang=lang, **params)
+
+
+    def _load_bin_data(self, bin_name):
+        bin_data = self.bin_loader.load(bin_name)
+        self.bins[bin_name] = bin_data
+        return bin_data
+
+
+    def _get_runtime(self, bin_data):
+        fetcher_name = bin_data.fetcher
+        if fetcher_name not in self.fetchers:
+            self.fetchers[fetcher_name] = build_fetcher(fetcher_name)
+
+        parser_name = bin_data.parser
+        if parser_name not in self.parsers:
+            self.parsers[parser_name] = build_parser(parser_name, config=bin_data.raw)
+
+        return self.fetchers[fetcher_name], self.parsers[parser_name]
+
+
+    def _get_endpoint(self, bin_data, endpoint_name):
+        endpoint = bin_data.get_endpoint(endpoint_name)
+        if endpoint is None:
+            raise EndpointNotFoundError(endpoint_name)
+        return endpoint
+
+
+    def _build_url(self, bin_name, bin_data, endpoint, endpoint_name, params):
+        base_url = bin_data.url
+        path = endpoint.path
+
+        if not base_url:
+            raise BinKeyError(bin_name, bin_keys.URL)
+
+        if not path:
+            raise BinKeyError(bin_name, bin_keys.ENDPOINT_PATH)
+
+        try:
+            return f"{base_url.rstrip('/')}/{path.lstrip('/')}".format(**params)
+        except KeyError as e:
+            missing = e.args[0]
+            expected = [p.strip("{}") for p in path.split("/") if "{" in p]
+            raise URLKeyError(
+                missing,
+                endpoint_name,
+                expected=expected,
+                got=list(params.keys())
+            )
+
+
+    def _load_cached_record(self, bin_name, endpoint_name, *, lang, refresh, params):
+        if self.packing_mode == config.PACKING_MODE_LAZY and not refresh:
+            self.storage.pack_one(self.bag.content, bin_name, endpoint_name, lang=lang, **params)
+
+        cached = self.bag.get(bin_name, endpoint_name, params=params, lang=lang)
+
+        if not refresh and cached and cached.data is not None:
+            return cached
+
+        return None
+
+
+    def _fetch_html(self, fetcher, url, bin_data, lang):
+        return fetcher.fetch(
+            url,
+            wait_selector=bin_data.raw.get(bin_keys.ENDPOINT_WAIT_SELECTOR),
+            fetch_conf=bin_data.fetch,
+            lang=lang,
+        )
+
+
+    def _parse_result(self, parser, html, endpoint):
+        return parser.parse(html, endpoint.fields)
+
+
+    def _timestamp(self):
+        from datetime import datetime
+        return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+    def _build_record(self, params, url, html, result, *, lang):
+        return Record(
+            params,
+            url,
+            html,
+            result,
+            self._timestamp(),
+            lang=lang,
+        )
+
+
+    def _persist_record(self, bin_name, endpoint_name, bin_data, record):
+        self.bag.stash(bin_name, endpoint_name, record)
+        self.storage.hoard(
+            bin_name,
+            endpoint_name,
+            record,
+            bin_version=bin_data.version,
+            bin_hash=bin_data.hash,
+        )
