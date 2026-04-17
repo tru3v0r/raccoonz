@@ -5,6 +5,7 @@ import re
 
 from .storage.filesystem import FileSystemStorage
 from .storage.bag import Bag
+from .sniff.sniffer import Sniffer
 from .constants import config
 from .constants import bin_keys
 from .errors import BinNotFoundError, URLKeyError, EndpointNotFoundError, BinKeyError
@@ -24,13 +25,18 @@ class Raccoon:
     ):
 
         self.bins = {}
+        self.sniffer = Sniffer(
+            load_bin=self._load_bin,
+            list_bins=self._list_bins,
+            dig=self.dig,
+        )
         self.fetchers = {}
         self.parsers = {}
         self.bag = Bag()
         self.nest_root = Path(config.NEST_PATH)
-        self.fully_packed = False
         self.storage = FileSystemStorage(self.nest_root)
         self.debug = debug
+        self.fully_packed = False
 
         self.packing_mode = packing_mode
         if packing_mode == config.PACKING_MODE_EAGER:
@@ -159,53 +165,8 @@ class Raccoon:
         return result
     
 
-
     def sniff(self, url: str, *, dig=False, lang=config.PLAYWRIGHT_CONTEXT_LOCALE):
-        matches = []
-
-        url_base, url_path = self._split_base_and_path(url)
-
-        for bin_name in self._list_bins():
-            bin_data = self._load_bin(bin_name)
-            bin_config = bin_data[config.BIN_CONFIG]
-
-            base_url = bin_config.get(bin_keys.URL, "")
-            endpoints = bin_config.get(bin_keys.ENDPOINTS, {})
-
-            if not self._base_matches(url_base, base_url):
-                continue
-
-            for endpoint_name, ep in endpoints.items():
-                path = ep.get(bin_keys.ENDPOINT_PATH)
-                if not path:
-                    continue
-
-                regex, keys = self._path_to_regex(path)
-
-                m = re.match(regex, url_path)
-                if not m:
-                    continue
-
-                params = dict(zip(keys, m.groups()))
-
-                match = {
-                    "bin": bin_name,
-                    "endpoint": endpoint_name,
-                    "params": params,
-                }
-
-                if dig:
-                    match = self.dig(
-                        bin_name,
-                        endpoint_name,
-                        refresh=False,
-                        lang=lang,
-                        **params
-                    )
-
-                matches.append(match)
-
-        return matches or None
+        return self.sniffer.sniff(url, dig=dig, lang=lang)
 
 
 
@@ -354,56 +315,6 @@ class Raccoon:
     def _bin_hash(self, bin):
         return self.bins[bin][config.BIN_HASH]
 
-
-
-
-
-    # sniff helpers
-
-    def _normalize_url_for_sniff(self, url: str):
-        url = url.strip()
-        url = re.sub(r"^https?://", "", url, flags=re.IGNORECASE)
-        url = url.lstrip("/")
-        url = url.rstrip("/")
-        return url
-
-
-
-    def _split_base_and_path(self, url: str):
-        normalized = self._normalize_url_for_sniff(url)
-        parts = normalized.split("/", 1)
-        base = parts[0]
-        path = "/" + parts[1] if len(parts) > 1 else "/"
-        return base, path
-    
-
-
-    def _base_matches(self, url_base: str, bin_base_url: str):
-        bin_base = self._normalize_url_for_sniff(bin_base_url).split("/", 1)[0]
-
-        if url_base == bin_base:
-            return True
-
-        if url_base.startswith("www.") and url_base[4:] == bin_base:
-            return True
-
-        if bin_base.startswith("www.") and bin_base[4:] == url_base:
-            return True
-
-        return False
-
-
-
-    def _path_to_regex(self, path):
-        keys = re.findall(r"{(.*?)}", path)
-        regex = re.escape(path)
-
-        for key in keys:
-            regex = regex.replace(r"\{" + key + r"\}", r"([^/]+)")
-
-        regex = "^" + regex.rstrip("/") + "/?$"
-        
-        return regex, keys
 
 
 
