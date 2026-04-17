@@ -29,6 +29,13 @@ class BaseParser(ABC):
     def _select_items(self, source, key, config, errors):
         pass
 
+    def _pipeline(self):
+        return (
+            self._extract,
+            self._filter,
+            self._type
+        )
+
     def _walk(self, node, callback, path=""):
         result = {}
 
@@ -61,7 +68,7 @@ class BaseParser(ABC):
         if not current:
             return None
 
-        for step in (self._extract, self._filter, self._type):
+        for step in self._pipeline():
             current = step(current, value)
 
             if current is None:
