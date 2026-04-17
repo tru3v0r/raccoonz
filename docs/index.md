@@ -3,10 +3,14 @@ The documentation aims at helping you understand what the **raccoonz** library c
 
 Here are the available pages, in a logic learning flow:
 
+#### Basics
 - [Glossary](glossary.md): what the main concepts are
 - [How it works](how-it-works.md): how the workflow is built
-- [Data flow](data-flow.md): how data is stored and loaded in the library
 - [API](api.md): how to use the `Raccoon` class methods
+
+#### To go further
+- [Architecture](architecture.md): how objects interact with each other
+- [Data flow](data-flow.md): how data is stored and loaded in the library
 - [Bin](bin.md): how to retrieve data using a bin, and how to write one
 
 
