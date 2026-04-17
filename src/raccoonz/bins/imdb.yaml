@@ -7,13 +7,12 @@ version: 0.0.1
 comment: "The first raccoonz bin ever."
 
 fetcher: playwright
-parser: bs4
-
 fetch:
   scroll_to:
     _select:
       css: "[data-testid='storyline-plot-summary']"
   wait_ms: 1500
+parser: bs4
 
 
 endpoints:
@@ -70,6 +69,7 @@ endpoints:
             _extract:
               attr: aria-label
             _filter: vote_by_star
+            _type: int
         reviews:
           _select:
             css:
