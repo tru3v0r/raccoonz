@@ -4,6 +4,7 @@ import hashlib
 import re
 
 from .storage.filesystem import FileSystemStorage
+from .storage.bag import Bag
 from .constants import config
 from .constants import bin_keys
 from .errors import BinNotFoundError, URLKeyError, EndpointNotFoundError, BinKeyError
@@ -25,7 +26,7 @@ class Raccoon:
         self.bins = {}
         self.fetchers = {}
         self.parsers = {}
-        self.bag = {}
+        self.bag = Bag()
         self.nest_root = Path(config.NEST_PATH)
         self.fully_packed = False
         self.storage = FileSystemStorage(self.nest_root)
@@ -33,7 +34,7 @@ class Raccoon:
 
         self.packing_mode = packing_mode
         if packing_mode == config.PACKING_MODE_EAGER:
-            self.storage.pack(self.bag)
+            self.storage.pack(self.bag.content)
             self.fully_packed = True
 
 
@@ -108,12 +109,10 @@ class Raccoon:
                 got=list(params.keys())
             )
         
-        params_key = self.storage._record_key(params, lang)
-
         if self.packing_mode == config.PACKING_MODE_LAZY and not refresh:
-            self.storage.pack_one(self.bag, bin, endpoint, lang=lang, **params)
+            self.storage.pack_one(self.bag.content, bin, endpoint, lang=lang, **params)
         
-        cached = self.bag.get(bin, {}).get(endpoint, {}).get(params_key)
+        cached = self.bag.get(bin, endpoint, params=params, lang=lang)
         if not refresh and cached and cached.data is not None:
             return cached.data
         
@@ -143,7 +142,7 @@ class Raccoon:
             lang=lang
         )
 
-        self._stash(bin, endpoint, record)
+        self.bag.stash(bin, endpoint, record)
         self.storage.hoard(
             bin,
             endpoint,
@@ -222,7 +221,7 @@ class Raccoon:
         from fastapi import FastAPI, HTTPException, Request
         import uvicorn
 
-        self.storage.pack(self.bag)
+        self.storage.pack(self.bag.content)
 
         app = FastAPI()
 
@@ -241,7 +240,7 @@ class Raccoon:
                 query_params=query_params
             )
 
-            records = self._served_records(
+            records = self.bag.find(
                 bin_filter=bin_filter,
                 endpoint_filter=endpoint_filter,
                 lang=effective_lang,
@@ -280,7 +279,7 @@ class Raccoon:
                 query_params=query_params
             )
 
-            records = self._served_records(
+            records = self.bag.find(
                 bin_filter=current_bin_filter,
                 endpoint_filter=current_endpoint_filter,
                 lang=effective_lang,
@@ -332,17 +331,6 @@ class Raccoon:
 
 
 
-    # write to bag
-    def _stash(self, bin, endpoint, record):
-        record_key = self.storage._record_key(record.params, record.lang)
-
-        if bin not in self.bag:
-            self.bag[bin] = {}
-            
-        if endpoint not in self.bag[bin]:
-            self.bag[bin][endpoint] = {}
-
-        self.bag[bin][endpoint][record_key] = record
 
 
 
@@ -447,40 +435,11 @@ class Raccoon:
     
 
 
-    def _served_records(self, *, bin_filter=None, endpoint_filter=None, lang=None, query_params=None):
-        results = []
-        query_params = query_params or {}
 
-        for bin_name, endpoints_map in self.bag.items():
-            if bin_filter is not None and bin_name not in bin_filter:
-                continue
-
-            for endpoint_name, records_map in endpoints_map.items():
-                if endpoint_filter is not None and endpoint_name not in endpoint_filter:
-                    continue
-
-                for record in records_map.values():
-                    if lang is not None and record.lang != lang:
-                        continue
-
-                    if not self._record_matches_query(record, query_params):
-                        continue
-
-                    results.append({
-                        "bin": bin_name,
-                        "endpoint": endpoint_name,
-                        "record": record,
-                    })
-
-        return results
     
 
 
-    def _record_matches_query(self, record, query_params):
-        for key, value in query_params.items():
-            if str(record.params.get(key)) != value:
-                return False
-        return True
+
     
 
 
@@ -562,7 +521,7 @@ class Raccoon:
             candidates.append(default_lang)
 
         for candidate in candidates:
-            if self._has_served_records(
+            if self.bag.has_records(
                 bin_filter=bin_filter,
                 endpoint_filter=endpoint_filter,
                 lang=candidate,
@@ -570,7 +529,7 @@ class Raccoon:
             ):
                 return candidate
 
-        return self._first_served_lang(
+        return self.bag.first_lang(
             bin_filter=bin_filter,
             endpoint_filter=endpoint_filter,
             query_params=clean_query
@@ -578,38 +537,6 @@ class Raccoon:
 
 
 
-    def _has_served_records(self, *, bin_filter=None, endpoint_filter=None, lang=None, query_params=None):
-        return bool(self._served_records(
-            bin_filter=bin_filter,
-            endpoint_filter=endpoint_filter,
-            lang=lang,
-            query_params=query_params
-        ))
-
-
-
-    def _first_served_lang(self, *, bin_filter=None, endpoint_filter=None, query_params=None):
-        query_params = query_params or {}
-
-        for bin_name, endpoints_map in self.bag.items():
-            if bin_filter is not None and bin_name not in bin_filter:
-                continue
-
-            for endpoint_name, records_map in endpoints_map.items():
-                if endpoint_filter is not None and endpoint_name not in endpoint_filter:
-                    continue
-
-                for record in records_map.values():
-                    if self._record_matches_query(record, query_params):
-                        return record.lang
-
-        return None
-    
-
     def _reload_one(self, bin, endpoint, *, lang, **params):
-        if bin in self.bag and endpoint in self.bag[bin]:
-            self.bag[bin].pop(endpoint, None)
-            if not self.bag[bin]:
-                self.bag.pop(bin, None)
-
-        self.storage.pack_one(self.bag, bin, endpoint, lang=lang, **params)
+        self.bag.delete_endpoint(bin, endpoint)
+        self.storage.pack_one(self.bag.content, bin, endpoint, lang=lang, **params)
