@@ -8,6 +8,7 @@ from .storage.bag import Bag
 from .sniff.sniffer import Sniffer
 from .serve.server import Server
 from .errors import URLKeyError, EndpointNotFoundError, BinKeyError
+from .runtime.runtime_registry import RuntimeRegistry
 from .fetcher.factory import build_fetcher
 from .parser.factory import build_parser
 from .record import Record
@@ -25,13 +26,12 @@ class Raccoon:
 
         self.bins = {}
         self.bin_loader = BinLoader()
+        self.runtime = RuntimeRegistry()
         self.sniffer = Sniffer(
             load_bin=self.bin_loader.load,
             list_bins=self.bin_loader.list,
             dig=self.dig,
         )
-        self.fetchers = {}
-        self.parsers = {}
         self.bag = Bag()
         self.nest_root = Path(config.NEST_PATH)
         self.storage = FileSystemStorage(self.nest_root)
@@ -64,7 +64,7 @@ class Raccoon:
         **params
     ):
         bin_data = self._load_bin_data(bin)
-        fetcher, parser = self._get_runtime(bin_data)
+        fetcher, parser = self.runtime.get_runtime(bin_data)
         endpoint_data = self._get_endpoint(bin_data, endpoint)
         url = self._build_url(bin, bin_data, endpoint_data, endpoint, params)
 
@@ -242,18 +242,6 @@ class Raccoon:
         bin_data = self.bin_loader.load(bin_name)
         self.bins[bin_name] = bin_data
         return bin_data
-
-
-    def _get_runtime(self, bin_data):
-        fetcher_name = bin_data.fetcher
-        if fetcher_name not in self.fetchers:
-            self.fetchers[fetcher_name] = build_fetcher(fetcher_name)
-
-        parser_name = bin_data.parser
-        if parser_name not in self.parsers:
-            self.parsers[parser_name] = build_parser(parser_name, config=bin_data.raw)
-
-        return self.fetchers[fetcher_name], self.parsers[parser_name]
 
 
     def _get_endpoint(self, bin_data, endpoint_name):
