@@ -9,10 +9,8 @@ from .sniff.sniffer import Sniffer
 from .serve.server import Server
 from .errors import URLKeyError, EndpointNotFoundError, BinKeyError
 from .runtime.runtime_registry import RuntimeRegistry
-from .fetcher.factory import build_fetcher
-from .parser.factory import build_parser
 from .record import Record
-
+from .utils.time import now_timestamp
 
 
 class Raccoon:
@@ -181,10 +179,6 @@ class Raccoon:
         return parser.parse(html, endpoint.fields)
 
 
-    def _timestamp(self):
-        from datetime import datetime
-        return datetime.now().strftime("%Y%m%d_%H%M%S")
-
 
     def _build_record(self, params, url, html, result, *, lang):
         return Record(
@@ -192,7 +186,7 @@ class Raccoon:
             url,
             html,
             result,
-            self._timestamp(),
+            now_timestamp(),
             lang=lang,
         )
 

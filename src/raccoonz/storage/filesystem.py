@@ -1,7 +1,7 @@
 import yaml
 from ..record import Record
 from ..constants import config
-from datetime import datetime
+from ..utils.time import now_timestamp
 
 
 class FileSystemStorage:
@@ -107,10 +107,10 @@ class FileSystemStorage:
         data_path = data_dir / f"{stem}.yaml"
 
         if data_path.exists():
-            data_path.rename(data_expired_dir / f"{stem}_{self._timestamp()}.yaml")
+            data_path.rename(data_expired_dir / f"{stem}_{now_timestamp()}.yaml")
 
         if raw_path.exists():
-            raw_path.rename(raw_expired_dir / f"{stem}_{self._timestamp()}.html")
+            raw_path.rename(raw_expired_dir / f"{stem}_{now_timestamp()}.html")
 
         if record.html is not None:
             raw_path.write_text(record.html, encoding=config.FILE_ENCODING_UTF8)
@@ -221,8 +221,3 @@ class FileSystemStorage:
             result = result.replace(char, "_")
 
         return result.strip() or "_"
-
-
-    def _timestamp(self):
-        return datetime.now().strftime("%Y%m%d_%H%M%S")
-    
