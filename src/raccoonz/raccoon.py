@@ -44,12 +44,10 @@ class Raccoon:
             bag=self.bag,
         )
         self.debug = debug
-        self.fully_packed = False
 
         self.packing_mode = packing_mode
         if packing_mode == config.PACKING_MODE_EAGER:
             self.storage.pack(self.bag.content)
-            self.fully_packed = True
         
 
     def dig(
