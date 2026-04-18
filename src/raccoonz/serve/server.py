@@ -1,26 +1,13 @@
 from fastapi import FastAPI, HTTPException, Request
 import uvicorn
+from .support import ServeSupport
 
 
 class Server:
-    def __init__(
-        self,
-        *,
-        pack,
-        find_records,
-        resolve_served_lang,
-        merge_filters,
-        clean_query_params,
-        format_records_response,
-        resolve_path,
-    ):
+    def __init__(self, *, pack, find_records, bag):
         self._pack = pack
         self._find_records = find_records
-        self._resolve_served_lang = resolve_served_lang
-        self._merge_filters = merge_filters
-        self._clean_query_params = clean_query_params
-        self._format_records_response = format_records_response
-        self._resolve_path = resolve_path
+        self._serve_support = ServeSupport(bag)
 
     def serve(
         self,
@@ -37,14 +24,14 @@ class Server:
 
         app = FastAPI()
 
-        bin_filter = self._merge_filters(bin_name, bin_names)
-        endpoint_filter = self._merge_filters(endpoint_name, endpoint_names)
+        bin_filter = self._serve_support.merge_filters(bin_name, bin_names)
+        endpoint_filter = self._serve_support.merge_filters(endpoint_name, endpoint_names)
 
         @app.get("/")
         def serve_root(request: Request):
             query_params = dict(request.query_params)
 
-            effective_lang = self._resolve_served_lang(
+            effective_lang = self._serve_support.resolve_served_lang(
                 requested_lang=query_params.get("lang"),
                 served_lang=lang,
                 bin_filter=bin_filter,
@@ -56,14 +43,14 @@ class Server:
                 bin_filter=bin_filter,
                 endpoint_filter=endpoint_filter,
                 lang=effective_lang,
-                query_params=self._clean_query_params(query_params),
+                query_params=self._serve_support.clean_query_params(query_params),
             )
 
             if not records:
                 raise HTTPException(status_code=404, detail="No matching records")
 
             raw = request.query_params.get("raw") == "true"
-            return self._format_records_response(records, raw=raw)
+            return self._serve_support.format_records_response(records, raw=raw)
 
         @app.get("/{path:path}")
         def serve_path(path: str, request: Request):
@@ -82,7 +69,7 @@ class Server:
             if path_endpoint and endpoint_filter is not None and path_endpoint not in endpoint_filter:
                 raise HTTPException(status_code=404, detail="Endpoint not served")
 
-            effective_lang = self._resolve_served_lang(
+            effective_lang = self._serve_support.resolve_served_lang(
                 requested_lang=query_params.get("lang"),
                 served_lang=lang,
                 bin_filter=current_bin_filter,
@@ -94,7 +81,7 @@ class Server:
                 bin_filter=current_bin_filter,
                 endpoint_filter=current_endpoint_filter,
                 lang=effective_lang,
-                query_params=self._clean_query_params(query_params),
+                query_params=self._serve_support.clean_query_params(query_params),
             )
 
             if not records:
@@ -103,14 +90,14 @@ class Server:
             raw = request.query_params.get("raw") == "true"
 
             if len(parts) <= 2:
-                return self._format_records_response(records, raw=raw)
+                return self._serve_support.format_records_response(records, raw=raw)
 
             field_path = parts[2:]
             resolved = []
 
             for item in records:
                 try:
-                    value = self._resolve_path(item["record"].data, field_path)
+                    value = self._serve_support.resolve_path(item["record"].data, field_path)
                 except (KeyError, IndexError, TypeError):
                     continue
 
