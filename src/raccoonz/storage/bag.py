@@ -1,36 +1,18 @@
+from ..utils.keys import record_key
+
+
+
 class Bag:
     def __init__(self):
         self.content = {}
 
-    def _safe_path_part(self, value):
-        forbidden = '<>:"/\\|?*'
-        result = str(value)
-        for char in forbidden:
-            result = result.replace(char, "_")
-        return result.strip() or "_"
-
-    def _params_key(self, params):
-        if not params:
-            return "_"
-
-        parts = []
-        for key in sorted(params):
-            safe_key = self._safe_path_part(key)
-            safe_value = self._safe_path_part(params[key])
-            parts.append(f"{safe_key}={safe_value}")
-
-        return ",".join(parts)
-
-    def _record_key(self, params, lang):
-        return f"{self._safe_path_part(lang)}::{self._params_key(params)}"
-
     def stash(self, bin_name, endpoint, record):
         self.content.setdefault(bin_name, {}).setdefault(endpoint, {})
-        key = self._record_key(record.params, record.lang)
+        key = record_key(record.params, record.lang)
         self.content[bin_name][endpoint][key] = record
 
     def get(self, bin_name, endpoint, *, params, lang):
-        key = self._record_key(params, lang)
+        key = record_key(params, lang)
         return self.content.get(bin_name, {}).get(endpoint, {}).get(key)
 
     def has(self, bin_name, endpoint, *, params, lang):
