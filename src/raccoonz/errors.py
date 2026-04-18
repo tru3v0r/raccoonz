@@ -60,8 +60,14 @@ class URLKeyError(RaccoonError):
     fields = ("param", "endpoint", "expected", "got")
 
 
-class BinKeyError(RaccoonError):
-    default = "Could not find expected '{key}' key in bin '{bin}'."
+class BinValidationError(RaccoonError):
+    default = "Invalid bin '{bin}'."
+    fields = ("bin",)
+
+
+class EndpointValidationError(RaccoonError):
+    default = "Invalid endpoint '{endpoint}' in bin '{bin}'."
+    fields = ("bin", "endpoint")
 
 
 class SelectorSyntaxError(RaccoonError):

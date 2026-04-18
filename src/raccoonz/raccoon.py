@@ -12,7 +12,7 @@ from .sniff.sniffer import Sniffer
 from .serve.server import Server
 
 from .record import Record
-from .errors import URLKeyError, EndpointNotFoundError, BinKeyError
+from .errors import URLKeyError, EndpointNotFoundError
 
 from .utils.time import now_timestamp
 
@@ -139,12 +139,6 @@ class Raccoon:
     def _build_url(self, bin_name, bin_data, endpoint, endpoint_name, params):
         base_url = bin_data.url
         path = endpoint.path
-
-        if not base_url:
-            raise BinKeyError(bin_name, bin_keys.URL)
-
-        if not path:
-            raise BinKeyError(bin_name, bin_keys.ENDPOINT_PATH)
 
         try:
             return f"{base_url.rstrip('/')}/{path.lstrip('/')}".format(**params)
