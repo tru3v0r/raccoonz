@@ -1,3 +1,5 @@
+<img src="images/logo-with-name.png">
+
 # Documentation
 The documentation aims at helping you understand what the **raccoonz** library concepts are, how to use it, and how to customize or create your own YAML config files ([bins](glossary.md#bin)) to retrieve and structure data from any website.
 

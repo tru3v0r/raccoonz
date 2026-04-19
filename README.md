@@ -1,3 +1,5 @@
+<img src="docs/images/logo-with-name.png">
+
 # raccoonz
 **raccoonz** is a Python library that extracts structured data from any website using **bins** (YAML config files) and serves it as an API.
 
