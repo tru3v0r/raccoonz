@@ -31,19 +31,25 @@ This will return the full data:
 
 ```python
 {
-  "title": [
-    "The Lord of the Rings: The Fellowship of the Ring"
+  "title": "The Lord of the Rings: The Fellowship of the Ring",
+  "year": 2001,
+  "certificate": "PG-13",
+  "length": "2h 58m",
+  "rating": {
+    "note": 8.9,
+    "votes": {
+      "count": "2201.3K",
+      "chart": [31893, 8255, 9979, 13497, 28184, 59051, 170013, 410445, 610992, 859085]
+    },
+    "reviews": "6K"
+  },
+  "interests": [
+    "Action Epic",
+    "Adventure Epic",
+    "Dark Fantasy",
+    (...)
   ],
-  "year": [
-    "2001"
-  ],
-  "certificate": [
-    "PG-13"
-  ],
-  "length": [
-    "2h 58m"
-  ],
-(...)
+  (...)
 }
 ```
 
