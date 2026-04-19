@@ -14,7 +14,7 @@ from .serve.server import Server
 from .record import Record
 from .errors import URLKeyError, EndpointNotFoundError
 
-from .utils.time import now_timestamp
+from .utils.time import now_timestamp, is_expired
 
 
 
@@ -65,9 +65,11 @@ class Raccoon:
         endpoint_data = self._get_endpoint(bin_data, endpoint)
         url = self._build_url(bin, bin_data, endpoint_data, endpoint, params)
 
-        cached = self._load_cached_record(
+        cached = self._get_fresh_cached_record(
             bin,
             endpoint,
+            bin_data=bin_data,
+            endpoint_data=endpoint_data,
             lang=lang,
             refresh=refresh,
             params=params,
@@ -77,7 +79,7 @@ class Raccoon:
         else:
             html = self._fetch_html(fetcher, url, bin_data, lang)
             result = self._parse_result(parser, html, endpoint_data)
-            record = self._build_record(params, url, html, result, lang=lang)
+            record = self._build_record(params, url, html, result, lang=lang, bin_hash=bin_data.hash)
             self._persist_record(bin, endpoint, bin_data, record)
 
         if result_type == config.RESULT_TYPE_OBJECT:
@@ -151,16 +153,25 @@ class Raccoon:
             )
 
 
-    def _load_cached_record(self, bin_name, endpoint_name, *, lang, refresh, params):
+    def _get_fresh_cached_record(self, bin_name, endpoint_name, *, bin_data, endpoint_data, lang, refresh, params):
         if self.packing_mode == config.PACKING_MODE_LAZY and not refresh:
             self.storage.pack_one(self.bag.content, bin_name, endpoint_name, lang=lang, **params)
 
         cached = self.bag.get(bin_name, endpoint_name, params=params, lang=lang)
 
-        if not refresh and cached and cached.data is not None:
-            return cached
+        if cached is None:
+            return None
 
-        return None
+        if refresh:
+            return None
+
+        if cached.data is None:
+            return None
+
+        if self._is_record_stale(cached, bin_data, endpoint_data):
+            return None
+
+        return cached
 
 
     def _fetch_html(self, fetcher, url, bin_data, lang):
@@ -177,7 +188,7 @@ class Raccoon:
 
 
 
-    def _build_record(self, params, url, html, result, *, lang):
+    def _build_record(self, params, url, html, result, *, lang, bin_hash):
         return Record(
             params,
             url,
@@ -185,6 +196,7 @@ class Raccoon:
             result,
             now_timestamp(),
             lang=lang,
+            bin_hash=bin_hash
         )
 
 
@@ -197,3 +209,9 @@ class Raccoon:
             bin_version=bin_data.version,
             bin_hash=bin_data.hash,
         )
+
+    def _is_record_stale(self, record, bin_data, endpoint_data):
+        if record.bin_hash != bin_data.hash:
+            return True
+
+        return is_expired(record.timestamp, endpoint_data.life_delta)

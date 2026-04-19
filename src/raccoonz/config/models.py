@@ -4,6 +4,7 @@ from typing import Any
 from ..constants import bin_keys
 from ..constants import config
 from ..errors import BinValidationError, EndpointValidationError
+from ..utils.time import build_life_delta
 
 
 @dataclass(frozen=True)
@@ -11,6 +12,7 @@ class Endpoint:
     name: str
     path: str | None
     fields: dict[str, Any] = field(default_factory=dict)
+    life: dict[str, int] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, *, bin_name: str, name: str, data: dict[str, Any]):
@@ -44,11 +46,34 @@ class Endpoint:
                 detail=f"'{bin_keys.FIELDS}' must be a mapping.",
             )
 
+        life = data.get(bin_keys.ENDPOINT_LIFE, {})
+        if not isinstance(life, dict):
+            raise EndpointValidationError(
+                bin_name,
+                name,
+                detail=f"'{bin_keys.ENDPOINT_LIFE}' must be a mapping.",
+            )
+
+        try:
+            build_life_delta(life if life else None)
+        except ValueError as e:
+            raise EndpointValidationError(
+                bin_name,
+                name,
+                detail=str(e),
+            )
+
         return cls(
             name=name,
             path=path,
             fields=fields,
+            life=life,
         )
+
+    @property
+    def life_delta(self):
+        return build_life_delta(self.life if self.life else None)
+
 
 
 @dataclass(frozen=True)

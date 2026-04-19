@@ -14,6 +14,7 @@ FETCH_WAIT_MS = "wait_ms"
 
 ENDPOINTS = "endpoints"
 ENDPOINT_PATH = "path"
+ENDPOINT_LIFE = "life"
 ENDPOINT_WAIT_SELECTOR = "wait_selector"
 
 

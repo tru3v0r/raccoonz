@@ -61,9 +61,9 @@ class FileSystemStorage:
 
 
     def pack_one(self, bag, bin_name, endpoint, *, lang, **params):
-        record_cache_key = record_key(params, lang)
+        cache_key = record_key(params, lang)
 
-        if bin_name in bag and endpoint in bag[bin_name] and record_cache_key in bag[bin_name][endpoint]:
+        if bin_name in bag and endpoint in bag[bin_name] and cache_key in bag[bin_name][endpoint]:
             return bag
 
         raw_dir = self._raw_dir_endpoint(bin_name, lang, endpoint)
@@ -150,7 +150,7 @@ class FileSystemStorage:
         timestamp = meta.get(config.NEST_FIELD_TIMESTAMP)
         url = meta.get(config.NEST_FIELD_URL)
         lang = meta.get(config.NEST_FIELD_LANG, default_lang)
-
+        bin_hash=meta.get(config.NEST_FIELD_HASH)
         stem = params_key(params)
         raw_file = raw_dir / f"{stem}.html"
         html = raw_file.read_text(encoding=config.FILE_ENCODING_UTF8) if raw_file.exists() else None
@@ -162,6 +162,7 @@ class FileSystemStorage:
             data=data,
             timestamp=timestamp,
             lang=lang,
+            bin_hash=bin_hash
         )
     
 
@@ -172,8 +173,8 @@ class FileSystemStorage:
         if endpoint not in bag[bin_name]:
             bag[bin_name][endpoint] = {}
 
-        record_cache_key = record_key(record.params, record.lang)
-        bag[bin_name][endpoint][record_cache_key] = record
+        cache_key = record_key(record.params, record.lang)
+        bag[bin_name][endpoint][cache_key] = record
 
 
     def _bin_dir(self, bin_name):
