@@ -3,21 +3,20 @@
 # raccoonz
 **raccoonz** is a Python library that extracts structured data from any website using **bins** (YAML config files) and serves it as an API.
 
-## How does it work?
 
-### Installation (🚧WIP)
+## Installation (🚧WIP)
 ```bash
 pip install raccoonz
 ```
 
-### Quick Start
+## Quick Start
 Let's take an example with a website that doesn't let us use their API anymore.
 
 ```python
 from raccoonz import Raccoon
 
 albert = Raccoon()
-albert.dig("imdb", "movie", id="tt0120737")
+albert.sniff("https://www.imdb.com/title/tt0120737/")
 albert.serve()
 ```
 
@@ -55,9 +54,12 @@ This will return the full data:
 
 For more information see the [workflow](docs/how-it-works.md) page of the documentation.
 
+## How does it work?
 
-## Bins
-Bins are YAML files that contain all the information to properly retrieve data from a website. Here is a simplified example of `imdb.yaml`:
+It uses YAML config files named **bins**.
+
+### Bins
+Bins are YAML files that contain all the information to properly retrieve data from a website. Here is a simplified example of `imdb.yaml` using CSS selectors:
 
 ```yaml
 name: imdb
@@ -81,7 +83,7 @@ endpoints:
         _type: int
 ```
 
-For the bin full specs, please read the [Bin section](docs/bin.md) of the documentation.
+For the full bin specs, please read the [Bin section](docs/bin.md) of the documentation.
 
 ---
 
