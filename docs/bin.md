@@ -17,32 +17,35 @@
     - [Path](#path)
       - [Static](#static)
       - [Dynamic](#dynamic)
-    - [Fields](#fields)
+    - [Life](#life)
+      - [Parameters](#parameters-3)
       - [Example](#example-2)
+    - [Fields](#fields)
+      - [Example](#example-3)
   - [Operators](#operators)
     - [Shape operators](#shape-operators)
-      - [Parameters](#parameters-3)
+      - [Parameters](#parameters-4)
       - [`_group`](#_group)
-        - [Example](#example-3)
-      - [`_map`](#_map)
-        - [Parameters](#parameters-4)
         - [Example](#example-4)
-    - [Field operators](#field-operators)
-      - [Parameters](#parameters-5)
-      - [`_select`](#_select)
-        - [Parameters](#parameters-6)
+      - [`_map`](#_map)
+        - [Parameters](#parameters-5)
         - [Example](#example-5)
-      - [`_extract`](#_extract)
+    - [Field operators](#field-operators)
+      - [Parameters](#parameters-6)
+      - [`_select`](#_select)
         - [Parameters](#parameters-7)
         - [Example](#example-6)
-      - [`_filter`](#_filter)
+      - [`_extract`](#_extract)
         - [Parameters](#parameters-8)
         - [Example](#example-7)
-      - [`_type`](#_type)
+      - [`_filter`](#_filter)
         - [Parameters](#parameters-9)
         - [Example](#example-8)
+      - [`_type`](#_type)
+        - [Parameters](#parameters-10)
+        - [Example](#example-9)
   - [Filters](#filters)
-    - [Parameters](#parameters-10)
+    - [Parameters](#parameters-11)
 
 ## Description
 A bin is a YAML config file that defines how the data will be retrieved, processed, and stored.
@@ -108,8 +111,9 @@ parser: bs4
 ## Endpoints
 
 An endpoint refers to a page displaying content.
-It is composed of two elements:
+It is composed of two to three elements:
 - A path
+- A life (optional)
 - Fields
 
 
@@ -119,6 +123,7 @@ It is composed of two elements:
 |----------|------|-------------------------------|----------------|
 | `path`   | str  | static or `{param}` template  | `/title/{id}/` |
 | `fields` | dict | any string without special YAML characters (`#`, `!`, `&` or `*`)   | `{title:...}`  |
+|  `life`  | dict | `days`, `hours`, `minutes`, `seconds` | `life: { days: 30, hours: 1 }` |
 
 
 ### Path
@@ -155,6 +160,46 @@ endpoints:
 
 ```python
 albert.dig("imdb", "movie", id="tt0120737")
+```
+
+
+### Life
+
+The endpoint life is the time data is considered valid.
+
+
+#### Parameters
+
+| Key       | Type | Allowed values   | Example       |
+|-----------|------|------------------|---------------|
+| `days`    | int  | Any positive int | `days: 7`     |
+| `hours`   | int  | Any positive int | `hours: 6`    |
+| `minutes` | int  | Any positive int | `minutes: 15` |
+| `seconds` | int  | Any positive int | `seconds: 30` |
+
+
+#### Example
+
+```yaml
+endpoints:
+  top_news:
+    path: "/news/top/"
+    life:
+      hours: 1
+```
+
+Once this life has expired, data will be retrieved again during a `sniff` or a `dig`.
+
+The data life is a delta calculated between now and the record's timestamp. Therefore, in the example above, data with a `hours: 1` life retrieved at `01:30:00` will still be relevant if `dig()` is called at `02:29:50` of the same day, but will be re-retrieved if the call is made at `02:30:01`.
+
+Note: the keys add up, so you can combine them to get a specific lifetime.
+
+```yaml
+life:
+  days: 6
+  hours: 23
+  minutes: 59
+  seconds: 59
 ```
 
 

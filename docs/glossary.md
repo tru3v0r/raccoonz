@@ -13,6 +13,7 @@ The **raccoonz** library borrows from the semantic field of this sneaky, yet bel
   - [group](#group)
   - [hoard](#hoard)
   - [key](#key)
+  - [life](#life)
   - [map](#map)
   - [nest](#nest)
   - [nudge](#nudge)
@@ -70,6 +71,10 @@ See: [`_group`](bin.md#_group)
 `_key` is a [shape operator](bin.md#shape-operators) that, once declared with a `_value` inside a `_map`, allows to form key-value pairings in your bin's output data.
 
 See: [`_map`](bin.md#_map)
+
+
+## life
+The [endpoint](#endpoint) `life` is the amount of time data from a specific endpoint is considered valid.
 
 
 ## map
