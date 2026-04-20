@@ -15,6 +15,8 @@ Here are the available pages, in a logic learning flow:
 - [Data flow](data-flow.md): how data is stored and loaded in the library
 - [Bin](bin.md): how to retrieve data using a bin, and how to write one
 
+#### Project
+- [Roadmap](roadmap.md): where **raccoonz** is going next
 
 
 ## Table of contents

@@ -115,3 +115,6 @@ You will find a step-by-step guide that will help you dive into the library:
 - [Architecture](docs/architecture.md): how objects interact with each other
 - [Data flow](docs/data-flow.md): how data is stored and loaded in the library
 - [Bin](docs/bin.md): how to retrieve data using a bin, and how to write one
+
+#### Project
+- [Roadmap](docs/roadmap.md): where **raccoonz** is going next
